@@ -70,7 +70,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh }) => {
     try {
       // NEW
 // Note: Do not add a slash (/) at the very end of the URL
-const BASE_URL = "https://school-backend-30rz.onrender.com"; 
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 await axios.post(`${BASE_URL}/api/teachers`, dataToSend, {
   headers: { Authorization: `Bearer ${token}` }
