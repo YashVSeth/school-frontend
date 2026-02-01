@@ -65,11 +65,13 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh }) => {
     if (files.idProof) dataToSend.append('idProof', files.idProof);
 
     try {
-      const token = localStorage.getItem('token');
-      // Axios automatically sets the Content-Type to multipart/form-data
-      await axios.post('https://school-backend-30rz.onrender.com/api/teachers', dataToSend, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // NEW
+// Note: Do not add a slash (/) at the very end of the URL
+const BASE_URL = "https://school-backend-30rz.onrender.com"; 
+
+await axios.post(`${BASE_URL}/api/teachers`, dataToSend, {
+  headers: { Authorization: `Bearer ${token}` }
+});
       
       onRefresh();
       handleClose();
