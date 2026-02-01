@@ -9,6 +9,9 @@ const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+// 1. Define the BASE_URL correctly
+  const BASE_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchTeachers();
   }, []);
@@ -16,7 +19,8 @@ const Teachers = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://school-backend-30rz.onrender.com/api/teachers', {
+      // 2. Use backticks ` ` to combine BASE_URL with the path
+      const res = await axios.get(`${BASE_URL}/api/teachers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTeachers(res.data);

@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     students: 0,
     classes: 0,
-    teachers: 12 // Hardcoded placeholder
+    teachers: 0 // Hardcoded placeholder
   });
 
   useEffect(() => {
@@ -26,14 +26,19 @@ const Dashboard = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const [studentRes, classRes] = await Promise.all([
-        axios.get('https://school-backend-30rz.onrender.com/api/students', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('https://school-backend-30rz.onrender.com/api/classes', { headers: { Authorization: `Bearer ${token}` } })
+      // 1. Define the Base URL properly
+      const BASE_URL = import.meta.env.VITE_API_URL;
+
+      // 2. Fetch Students, Classes, AND Teachers simultaneously
+      const [studentRes, classRes, teacherRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/students`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${BASE_URL}/api/classes`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${BASE_URL}/api/teachers`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setStats({
         students: studentRes.data.length,
         classes: classRes.data.length,
-        teachers: 12 
+        teachers: teacherRes.data.length
       });
     } catch (error) {
       console.error("Error fetching stats", error);

@@ -16,7 +16,7 @@ const Classes = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://school-backend-30rz.onrender.com/api/classes', {
+      const response = await axios.get(import.meta.env.VITE_API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setClasses(response.data);
@@ -36,7 +36,7 @@ const Classes = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'https://school-backend-30rz.onrender.com/api/classes',
+        import.meta.env.VITE_API_URL,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -7,6 +7,9 @@ import 'react-toastify/dist/ReactToastify.css';
 const StudentList = () => {
   const [students, setStudents] = useState([]);
 
+  // 1. Define the BASE_URL correctly
+  const BASE_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -14,7 +17,8 @@ const StudentList = () => {
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://school-backend-30rz.onrender.com/api/students', {
+      // 2. Use the variable correctly with backticks ` `
+      const response = await axios.get(`${BASE_URL}/api/students`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStudents(response.data);
@@ -27,7 +31,7 @@ const StudentList = () => {
     if (window.confirm("Are you sure? This will shift Roll Numbers for the whole class.")) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`https://school-backend-30rz.onrender.com/api/students/${id}`, {
+        await axios.delete(`import.meta.env.VITE_API_URL/api/students/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("Student Deleted");
