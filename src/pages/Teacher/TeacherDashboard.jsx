@@ -39,7 +39,7 @@ const TeacherDashboard = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       // We fetch all students and filter them on the frontend for now
-      const response = await axios.get('http://localhost:5000/api/students', {
+      const response = await axios.get('https://school-backend-30rz.onrender.comhttp://localhost:5000/api/students', {
         headers: { Authorization: `Bearer ${token}` },
       });
       
