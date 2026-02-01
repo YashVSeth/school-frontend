@@ -18,7 +18,7 @@ const Attendance = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/classes', {
+      const response = await axios.get('https://school-backend-30rz.onrender.com/api/classes', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setClasses(response.data);
@@ -36,7 +36,7 @@ const Attendance = () => {
       const token = localStorage.getItem('token');
       // We need an endpoint to filter students by class. 
       // For now, we fetch all and filter client-side (Optimizable later)
-      const response = await axios.get('http://localhost:5000/api/students', {
+      const response = await axios.get('https://school-backend-30rz.onrender.com/api/students', {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -70,7 +70,7 @@ const Attendance = () => {
         status: attendanceData[id]
       }));
 
-      await axios.post('http://localhost:5000/api/students/attendance', {
+      await axios.post('https://school-backend-30rz.onrender.com/api/students/attendance', {
         date,
         students: studentsArray
       }, {

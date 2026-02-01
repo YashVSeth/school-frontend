@@ -14,7 +14,7 @@ const StudentList = () => {
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/students', {
+      const response = await axios.get('https://school-backend-30rz.onrender.com/api/students', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStudents(response.data);
@@ -27,7 +27,7 @@ const StudentList = () => {
     if (window.confirm("Are you sure? This will shift Roll Numbers for the whole class.")) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/students/${id}`, {
+        await axios.delete(`https://school-backend-30rz.onrender.com/api/students/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("Student Deleted");

@@ -27,8 +27,8 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const [studentRes, classRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/students', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/classes', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('https://school-backend-30rz.onrender.com/api/students', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('https://school-backend-30rz.onrender.com/api/classes', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setStats({
         students: studentRes.data.length,

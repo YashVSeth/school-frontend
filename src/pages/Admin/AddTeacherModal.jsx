@@ -67,7 +67,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh }) => {
     try {
       const token = localStorage.getItem('token');
       // Axios automatically sets the Content-Type to multipart/form-data
-      await axios.post('http://localhost:5000/api/teachers', dataToSend, {
+      await axios.post('https://school-backend-30rz.onrender.com/api/teachers', dataToSend, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

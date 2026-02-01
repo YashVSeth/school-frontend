@@ -18,7 +18,7 @@ const TeacherDashboard = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/classes', {
+      const response = await axios.get('https://school-backend-30rz.onrender.com/api/classes', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setClasses(response.data);
@@ -39,7 +39,7 @@ const TeacherDashboard = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       // We fetch all students and filter them on the frontend for now
-      const response = await axios.get('https://school-backend-30rz.onrender.comhttp://localhost:5000/api/students', {
+      const response = await axios.get('https://school-backend-30rz.onrender.com/api/students', {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -77,7 +77,7 @@ const TeacherDashboard = () => {
       }));
 
       await axios.post(
-        'http://localhost:5000/api/students/attendance',
+        'https://school-backend-30rz.onrender.com/api/students/attendance',
         {
           date: new Date(), // Today's date
           students: attendanceData

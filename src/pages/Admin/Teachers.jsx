@@ -16,7 +16,7 @@ const Teachers = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:5000/api/teachers', {
+      const res = await axios.get('https://school-backend-30rz.onrender.com/api/teachers', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTeachers(res.data);

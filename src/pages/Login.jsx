@@ -15,7 +15,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", formData);
+      const response = await axios.post("https://school-backend-30rz.onrender.com/api/auth/login", formData);
       
       // DEBUGGING: Check what the server sent
       console.log("Server Response:", response.data); 
