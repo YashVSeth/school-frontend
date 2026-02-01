@@ -48,6 +48,9 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Get the token from Local Storage (Standard way)
+    const token = localStorage.getItem('token');
     
     // 3. CRITICAL: Use FormData instead of JSON
     const dataToSend = new FormData();
@@ -72,7 +75,7 @@ const BASE_URL = "https://school-backend-30rz.onrender.com";
 await axios.post(`${BASE_URL}/api/teachers`, dataToSend, {
   headers: { Authorization: `Bearer ${token}` }
 });
-      
+      alert("Teacher Added Successfully!");
       onRefresh();
       handleClose();
       
