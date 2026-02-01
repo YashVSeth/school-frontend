@@ -8,6 +8,9 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
+  // 1. Get the dynamic URL from the .env file
+  const BASE_URL = import.meta.env.VITE_API_URL;
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -15,7 +18,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("https://school-backend-30rz.onrender.com/api/auth/login", formData);
+      const response = await axios.post(`${BASE_URL}/api/auth/login`, formData);
       
       // DEBUGGING: Check what the server sent
       console.log("Server Response:", response.data); 
