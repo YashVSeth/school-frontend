@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-
+import ResetPassword from "./pages/Admin/ResetPassword";
 // ✅ UPDATE THIS IMPORT
 import Dashboard from './pages/Admin/Dashboard'; 
 
@@ -17,6 +17,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+
+        {/* ✅ Add this Route for the Reset Page */}
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* ✅ The route stays the same, only the file changed */}
         <Route path="/admin/dashboard" element={<Dashboard />} />
