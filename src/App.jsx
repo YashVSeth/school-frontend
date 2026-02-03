@@ -10,6 +10,7 @@ import AddStudent from './pages/Admin/AddStudent';
 import StudentList from './pages/Admin/StudentList';
 import Attendance from './pages/Admin/Attendance';
 import Teachers from './pages/Admin/Teachers';
+import Fees from './pages/Admin/Fees';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/admin/students/add" element={<AddStudent />} />
         <Route path="/admin/students/list" element={<StudentList />} />
         <Route path="/admin/attendance" element={<Attendance />} />
+        <Route path="/admin/fees" element={<Fees />} />
 
         <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/teachers" element={<Teachers />} />

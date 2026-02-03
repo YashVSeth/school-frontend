@@ -4,6 +4,7 @@ import {
   FaHome, FaChalkboardTeacher, FaUserGraduate, FaClipboardList, 
   FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes 
 } from 'react-icons/fa';
+import { FaMoneyBillWave } from 'react-icons/fa';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
@@ -122,18 +123,15 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               </div>
             )}
           </div>
-
           <Link 
-            to="/admin/attendance" 
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-              isActive('/admin/attendance') 
-                ? 'bg-emerald-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-            }`}
-          >
-            <FaClipboardList /> <span className="font-medium">Attendance</span>
-          </Link>
+  to="/admin/fees" 
+  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-slate-300 hover:text-white"
+>
+  <FaMoneyBillWave />
+  <span className="font-semibold">Fees</span>
+</Link>
+
+          
 
           <Link 
             to="/admin/teachers" 
