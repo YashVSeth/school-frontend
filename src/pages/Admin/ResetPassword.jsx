@@ -42,7 +42,7 @@ const ResetPassword = () => {
       
       // Wait 2 seconds so user sees the success message, then go to login
       setTimeout(() => {
-        navigate('/login');
+        navigate('/');
       }, 2000);
 
     } catch (error) {
