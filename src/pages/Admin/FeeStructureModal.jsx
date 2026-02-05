@@ -84,7 +84,7 @@ const FeeStructureModal = ({ isOpen, onClose, classes }) => {
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Monthly Fee</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-3 text-slate-400 font-bold">$</span>
+                    <span className="absolute left-3 top-3 text-slate-400 font-bold">Rs</span>
                     <input 
                         type="number" 
                         name="monthlyFee" 
@@ -100,7 +100,7 @@ const FeeStructureModal = ({ isOpen, onClose, classes }) => {
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Yearly Fee (Optional)</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-3 text-slate-400 font-bold">$</span>
+                    <span className="absolute left-3 top-3 text-slate-400 font-bold">Rs</span>
                     <input 
                         type="number" 
                         name="yearlyFee" 
@@ -121,7 +121,7 @@ const FeeStructureModal = ({ isOpen, onClose, classes }) => {
                 value={formData.description} 
                 onChange={handleChange}
                 className="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-                placeholder="e.g. Tuition fee for academic year 2024..."
+                placeholder="e.g. Tuition fee for academic year 2026..."
               />
             </div>
 
