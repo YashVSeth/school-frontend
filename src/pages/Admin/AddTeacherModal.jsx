@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { 
   FaTimes, FaArrowRight, FaCheck, FaUser, 
-  FaGraduationCap, FaFileAlt, FaLock, FaUpload 
+  FaGraduationCap, FaFileAlt, FaLock, FaUpload, 
+  FaMagic, FaEye, FaEyeSlash // ✅ NEW ICONS ADDED
 } from 'react-icons/fa';
 
 const INITIAL_DATA = {
@@ -16,6 +17,9 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
   const [formData, setFormData] = useState(INITIAL_DATA);
   const [files, setFiles] = useState({ photo: null, resume: null, idProof: null });
   
+  // ✅ NEW: State to toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
+
   const photoInputRef = useRef(null);  
   const resumeInputRef = useRef(null);
   const idProofInputRef = useRef(null);
@@ -28,6 +32,17 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
     }
     setFiles({ photo: null, resume: null, idProof: null });
   }, [teacherToEdit, isOpen]);
+
+  // ✅ NEW: Auto Generate Password Function
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#";
+    let pass = "";
+    for (let i = 0; i < 8; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({ ...prev, password: pass }));
+    setShowPassword(true); // Generate karte hi password dikha do
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,10 +97,8 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
-      {/* Container: Full screen on mobile, max-width on desktop */}
       <div className="bg-[#fdfdff] w-full max-w-3xl sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden border border-white h-[90vh] sm:h-auto flex flex-col">
         
-        {/* Header - Sticky */}
         <div className="bg-white px-6 py-4 sm:px-8 sm:py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-slate-700">
@@ -98,7 +111,6 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
         <div className="overflow-y-auto flex-grow p-6 sm:p-8">
           <form onSubmit={handleSubmit}>
             
@@ -107,7 +119,6 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
               <div className="space-y-6 animate-slide-up">
                 <h3 className="text-blue-900 font-bold flex items-center gap-2"><FaUser/> Basic Information</h3>
                 <div className="flex flex-col md:flex-row gap-8">
-                  {/* Photo Upload - Centered on mobile */}
                   <div className="w-full md:w-1/3 flex flex-col items-center gap-4">
                     <div className="w-32 h-32 aspect-square bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 overflow-hidden relative shadow-inner">
                       {files.photo ? (
@@ -124,7 +135,6 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                     </button>
                   </div>
                   
-                  {/* Text Inputs */}
                   <div className="w-full md:w-2/3 space-y-4">
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Full Name</label>
@@ -200,20 +210,48 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                   </div>
                   
                   <div className="space-y-4 lg:pl-10 lg:border-l border-slate-100">
-                     <h3 className="text-blue-600 font-bold flex items-center gap-2"><FaLock /> System Access</h3>
-                     <div className="space-y-1">
+                      <h3 className="text-blue-600 font-bold flex items-center gap-2"><FaLock /> System Access</h3>
+                      <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Username</label>
                         <input name="username" value={formData.username} onChange={handleChange} placeholder="johndoe123" className="form-input-style w-full" />
-                     </div>
-                     <div className="space-y-1">
+                      </div>
+                      
+                      {/* ✅ UPDATED: Password Field with Generate Button */}
+                      <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Password</label>
-                        <input name="password" value={formData.password} onChange={handleChange} type="password" placeholder="••••••••" className="form-input-style w-full" />
+                        <div className="flex gap-2 relative">
+                            <input 
+                                name="password" 
+                                value={formData.password} 
+                                onChange={handleChange} 
+                                type={showPassword ? "text" : "password"} // 👀 Toggle Type
+                                placeholder="••••••••" 
+                                className="form-input-style w-full pr-10" 
+                            />
+                            
+                            {/* Eye Icon */}
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} 
+                                className="absolute right-14 top-3 text-slate-400 hover:text-blue-600">
+                                {showPassword ? <FaEyeSlash/> : <FaEye/>}
+                            </button>
+
+                            {/* Magic Button */}
+                            <button 
+                                type="button" 
+                                onClick={generatePassword} 
+                                className="bg-purple-100 text-purple-600 p-3 rounded-xl hover:bg-purple-200 transition-all"
+                                title="Auto Generate Password"
+                            >
+                                <FaMagic />
+                            </button>
+                        </div>
                         {teacherToEdit && <p className="text-[10px] text-slate-400 italic mt-1">* Leave blank to keep current password</p>}
-                     </div>
-                     <div className="space-y-1 pt-2">
+                      </div>
+
+                      <div className="space-y-1 pt-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Status</label>
                         <select name="status" value={formData.status} onChange={handleChange} className="form-input-style w-full"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-                     </div>
+                      </div>
                   </div>
                 </div>
                 
