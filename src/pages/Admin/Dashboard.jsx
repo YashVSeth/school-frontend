@@ -3,12 +3,12 @@ import Layout from '../../components/Layout';
 import axios from 'axios';
 import { 
   FaUserGraduate, FaChalkboard, FaPlus, FaListAlt, 
-  FaWallet, FaBolt, FaWhatsapp, FaArrowUp
+  FaWallet, FaBolt, FaWhatsapp, FaArrowUp, FaMoneyBillWave
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Cell, PieChart, Pie 
+  BarChart, CartesianGrid, XAxis, YAxis, Tooltip, 
+  ResponsiveContainer, Bar, Cell 
 } from 'recharts';
 
 const Dashboard = () => {
@@ -18,10 +18,21 @@ const Dashboard = () => {
     students: 0,
     classes: 0,
     teachers: 0,
-    totalFinance: 0,
+    totalFinance: 0, 
+    totalCollected: 0,
     whatsappActive: 0
   });
   const [loading, setLoading] = useState(true);
+
+  // Added safety check for stats to prevent null errors
+  const safeStats = stats || {
+    students: 0,
+    classes: 0,
+    teachers: 0,
+    totalFinance: 0, 
+    totalCollected: 0,
+    whatsappActive: 0
+  };
 
   useEffect(() => {
     fetchStats();
@@ -33,31 +44,30 @@ const Dashboard = () => {
       const BASE_URL = import.meta.env.VITE_API_URL;
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [studentRes, classRes, teacherRes] = await Promise.all([
+      const [studentRes, classRes, teacherRes, globalStatsRes] = await Promise.all([
         axios.get(`${BASE_URL}/api/students`, { headers }),
         axios.get(`${BASE_URL}/api/classes`, { headers }),
-        axios.get(`${BASE_URL}/api/teachers`, { headers })
+        axios.get(`${BASE_URL}/api/teachers`, { headers }),
+        axios.get(`${BASE_URL}/api/fees/global-stats`, { headers }) 
       ]);
 
       const studentData = studentRes.data || [];
+      const financeData = globalStatsRes.data || {};
       
-      // --- CALCULATE FINANCE & WHATSAPP STATS ---
-      let totalRev = 0;
       let waCount = 0;
-      studentData.forEach(s => {
-        const fees = s.feeDetails || {};
-        totalRev += (fees.backlog_2024 || 0) + (fees.backlog_2025 || 0) + (fees.electricalCharges || 0);
-        if (s.whatsappEnabled) waCount++;
-      });
+      studentData.forEach(s => { if (s.whatsappEnabled) waCount++; });
 
       setStudents(studentData);
+      
       setStats({
         students: studentData.length,
-        classes: classRes.data.length,
-        teachers: teacherRes.data.length,
-        totalFinance: totalRev,
+        classes: classRes.data ? classRes.data.length : 0,
+        teachers: teacherRes.data ? teacherRes.data.length : 0,
+        totalFinance: financeData.pendingDues || 0,
+        totalCollected: financeData.totalCollected || 0,
         whatsappActive: waCount
       });
+
     } catch (error) {
       console.error("Error fetching stats", error);
     } finally {
@@ -65,8 +75,9 @@ const Dashboard = () => {
     }
   };
 
-  // --- CHART DATA PREPARATION ---
   const waterfallChartData = useMemo(() => {
+    if (!students.length) return [];
+    
     let b24 = 0, b25 = 0, curr26 = 0;
     students.forEach(s => {
       b24 += (s.feeDetails?.backlog_2024 || 0);
@@ -97,16 +108,33 @@ const Dashboard = () => {
 
         {/* TOP STATS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Students" value={stats.students} icon={<FaUserGraduate/>} color="bg-blue-600" />
-          <StatCard title="Expected Collection" value={`₹${stats.totalFinance.toLocaleString()}`} icon={<FaWallet/>} color="bg-rose-600" isFinance />
-          <StatCard title="WhatsApp Alerts" value={stats.whatsappActive} icon={<FaWhatsapp/>} color="bg-green-600" sub="Active Parents" />
-          <StatCard title="Live Classes" value={stats.classes} icon={<FaChalkboard/>} color="bg-amber-500" />
+          <StatCard title="Total Students" value={safeStats.students} icon={<FaUserGraduate/>} color="bg-blue-600" />
+          
+          <StatCard 
+            title="Outstanding Dues" 
+            value={`₹${safeStats.totalFinance.toLocaleString()}`} 
+            icon={<FaWallet/>} 
+            color="bg-rose-600" 
+            isFinance 
+            sub="Remaining to Collect"
+          />
+
+          <StatCard 
+            title="Total Collected" 
+            value={`₹${safeStats.totalCollected.toLocaleString()}`} 
+            icon={<FaMoneyBillWave/>} 
+            color="bg-emerald-600" 
+            isFinance 
+            sub="Cash in Hand"
+          />
+          
+          <StatCard title="Live Classes" value={safeStats.classes} icon={<FaChalkboard/>} color="bg-amber-500" />
         </div>
 
         {/* ANALYTICS SECTION */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* WATERFALL CHART */}
+          {/* ✅ FIXED WATERFALL CHART SECTION */}
           <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40">
             <div className="flex justify-between items-center mb-8">
               <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Waterfall Backlog Analysis</h3>
@@ -117,9 +145,8 @@ const Dashboard = () => {
               </div>
             </div>
             
-            
-
-            <div className="h-[300px] w-full">
+            {/* ✅ ADDED INLINE STYLES HERE TO PREVENT CRASH */}
+            <div style={{ width: '100%', height: 300, minWidth: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={waterfallChartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -136,15 +163,15 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* QUICK ACTIONS & WHATSAPP STATUS */}
+          {/* QUICK ACTIONS */}
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl text-white shadow-lg">
                <h4 className="text-xs font-bold opacity-60 uppercase tracking-widest mb-4">Quick Tasks</h4>
                <div className="grid grid-cols-2 gap-3">
                  <QuickActionBtn icon={<FaPlus/>} label="Add Student" onClick={() => navigate('/admin/students/add')} />
-                 <QuickActionBtn icon={<FaListAlt/>} label="Directory" onClick={() => navigate('/admin/students/list')} />
-                 <QuickActionBtn icon={<FaWallet/>} label="Fees" onClick={() => navigate('/admin/finance')} />
-                 <QuickActionBtn icon={<FaBolt/>} label="Alerts" onClick={() => navigate('/admin/communications')} />
+                 <QuickActionBtn icon={<FaListAlt/>} label="Directory" onClick={() => navigate('/admin/students')} />
+                 <QuickActionBtn icon={<FaWallet/>} label="Fees" onClick={() => navigate('/admin/fees')} />
+                 <QuickActionBtn icon={<FaBolt/>} label="Alerts" onClick={() => navigate('/admin/communication')} />
                </div>
             </div>
 
@@ -154,8 +181,8 @@ const Dashboard = () => {
                   <FaWhatsapp className="text-green-500 text-xl" />
                 </div>
                 <div className="space-y-4">
-                  <StatusProgress label="WhatsApp Enabled" value={stats.whatsappActive} total={stats.students} color="bg-green-500" />
-                  <StatusProgress label="Fee Receipts Sent" value={Math.floor(stats.whatsappActive * 0.7)} total={stats.students} color="bg-blue-500" />
+                  <StatusProgress label="WhatsApp Enabled" value={safeStats.whatsappActive} total={safeStats.students} color="bg-green-500" />
+                  <StatusProgress label="Collection Progress" value={safeStats.totalCollected} total={safeStats.totalFinance + safeStats.totalCollected} color="bg-blue-500" />
                 </div>
             </div>
           </div>
@@ -174,7 +201,7 @@ const StatCard = ({ title, value, icon, color, isFinance, sub }) => (
     </div>
     <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">{title}</p>
     <h2 className="text-3xl font-black mb-1">{value}</h2>
-    <p className="text-[11px] font-medium opacity-90">{sub || (isFinance ? "Waterfall Collection" : "System Records")}</p>
+    <p className="text-[11px] font-medium opacity-90">{sub || (isFinance ? "Real-time Update" : "System Records")}</p>
   </div>
 );
 
@@ -186,7 +213,7 @@ const QuickActionBtn = ({ icon, label, onClick }) => (
 );
 
 const StatusProgress = ({ label, value, total, color }) => {
-  const percentage = total > 0 ? (value / total) * 100 : 0;
+  const percentage = total > 0 ? Math.min(100, (value / total) * 100) : 0;
   return (
     <div>
       <div className="flex justify-between text-[11px] font-bold text-slate-500 mb-1 uppercase">
