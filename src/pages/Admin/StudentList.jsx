@@ -4,27 +4,28 @@ import Layout from '../../components/Layout';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { 
-  FaSearch, FaFilter, FaUserGraduate, FaTrash, FaEdit, FaPhoneAlt, FaEye 
+  FaSearch, FaUserGraduate, FaTrash, FaEdit, FaEye, 
+  FaFileInvoiceDollar, FaFileExcel, FaWhatsapp, FaPhoneAlt 
 } from 'react-icons/fa';
 import EditStudentModal from './EditStudentModal';
 import StudentProfileModal from './StudentProfileModal';
+
+// --- LIBRARIES FOR EXPORT ---
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const StudentList = () => {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState(null);
-
-  // Profile/View Modal State
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [studentToView, setStudentToView] = useState(null);
-
-  // Filters
-  const [searchTerm, setSearchTerm] = useState(''); // ✅ State is named 'searchTerm'
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [whatsappFilter, setWhatsappFilter] = useState('all'); // 'all', 'enabled', 'disabled'
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -36,264 +37,168 @@ const StudentList = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      
       const [studentRes, classRes] = await Promise.all([
         axios.get(`${BASE_URL}/api/students`, { headers }),
         axios.get(`${BASE_URL}/api/classes`, { headers })
       ]);
-
       setStudents(Array.isArray(studentRes.data) ? studentRes.data : []);
       setClasses(Array.isArray(classRes.data) ? classRes.data : []);
     } catch (error) {
-      console.error("Error fetching data");
       toast.error("Failed to load student list.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handler to open Edit modal
-  const handleEditClick = (student) => {
-    setStudentToEdit(student);
-    setIsEditModalOpen(true);
+  // ✅ WhatsApp Direct Messaging Function
+  const handleWhatsAppMessage = (student) => {
+    if (!student.phone) return toast.error("Phone number missing!");
+    
+    const message = `Namaste, this is from Radhey Shyam Sansthaan regarding ${student.firstName}. We wanted to discuss the student's progress and fee records.`;
+    const url = `https://wa.me/${student.phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
-  // Handler to open View/Profile modal
-  const handleViewClick = (student) => {
-    setStudentToView(student);
-    setIsProfileOpen(true);
+  // --- 📊 EXCEL EXPORT ---
+  const handleExportExcel = () => {
+    if (filteredStudents.length === 0) return toast.warn("No data to export");
+
+    const excelData = filteredStudents.map(s => ({
+      "Student ID": s.studentId,
+      "Name": `${s.firstName} ${s.lastName}`,
+      "Father": s.fatherName,
+      "Class": `${s.class?.grade || ''} - ${s.class?.section || ''}`,
+      "Total Due": (s.feeDetails?.backlog_2024 || 0) + (s.feeDetails?.backlog_2025 || 0) + 
+                   (s.feeDetails?.tuitionFee_2026 || 0) + (s.feeDetails?.electricalCharges || 0),
+      "Phone": s.phone || "N/A",
+      "WhatsApp": s.whatsappEnabled ? "Enabled" : "Disabled"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students_Report");
+    XLSX.writeFile(wb, `School_Report_${new Date().toLocaleDateString()}.xlsx`);
+    toast.success("Excel Downloaded!");
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to permanently delete this student?")) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${BASE_URL}/api/students/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStudents(students.filter(s => s._id !== id));
-      toast.success("Student deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete student");
-    }
-  };
-
-  // === FILTER LOGIC ===
+  // --- FILTER LOGIC ---
   const filteredStudents = students.filter((student) => {
+    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+    const fatherName = (student.fatherName || "").toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || 
+                          student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          fatherName.includes(searchTerm.toLowerCase());
     
-    // 1. SAFELY Get values
-    const name = (student.firstName || "") + " " + (student.lastName || "");
-    const studentClass = student.class || ""; 
+    const matchesClass = selectedClass ? (student.class?._id === selectedClass || student.class === selectedClass) : true;
     
-    // 2. Perform the search safely using 'searchTerm'
-    // 
-    const searchLower = searchTerm.toLowerCase(); // ✅ FIXED: Uses 'searchTerm'
+    const matchesWhatsapp = whatsappFilter === 'all' ? true : 
+                           whatsappFilter === 'enabled' ? student.whatsappEnabled === true : 
+                           student.whatsappEnabled === false;
 
-    const matchesName = name.toLowerCase().includes(searchLower);
-    
-    // Check class match
-    const classString = typeof studentClass === 'object' 
-        ? (studentClass.grade || "") 
-        : String(studentClass);
-
-    const matchesSearch = matchesName || classString.toLowerCase().includes(searchLower);
-
-    // 3. Apply Dropdown Class Filter
-    const matchesClassFilter = selectedClass ? 
-        (typeof student.class === 'object' ? student.class._id === selectedClass : student.class === selectedClass) 
-        : true;
-
-    return matchesSearch && matchesClassFilter;
+    return matchesSearch && matchesClass && matchesWhatsapp;
   });
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto animate-fade-in pb-10">
-        <ToastContainer position="top-right" autoClose={2000} />
+      <div className="max-w-7xl mx-auto pb-10 px-4">
+        <ToastContainer position="top-right" autoClose={2000} theme="colored" />
         
-        {/* === HEADER & FILTERS === */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Student Directory</h1>
-            <p className="text-sm text-slate-500">Manage and view all enrolled students</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            {/* Search Input */}
-            <div className="relative group w-full md:w-64">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search by Name or ID..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm shadow-sm transition-all"
-                value={searchTerm} // Matches state
-                onChange={(e) => setSearchTerm(e.target.value)} // Matches state
-              />
-            </div>
-
-            {/* Class Filter */}
-            <div className="relative w-full md:w-48">
-              <FaFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select 
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm shadow-sm appearance-none cursor-pointer"
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-              >
-                <option value="">All Classes</option>
-                {classes.map(cls => (
-                  <option key={cls._id} value={cls._id}>{cls.grade} - {cls.section}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* TOP BAR */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+           <div>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight">Student Directory</h1>
+              <p className="text-slate-500 font-medium">Manage records, contact parents, and track waterfall fees</p>
+           </div>
+           
+           <div className="flex gap-2">
+              <button onClick={handleExportExcel} className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition-all font-bold shadow-lg shadow-emerald-100">
+                <FaFileExcel /> Export Excel
+              </button>
+           </div>
         </div>
 
-        {/* === CONTENT AREA === */}
-        {loading ? (
-          <div className="flex justify-center items-center h-64 text-slate-400 animate-pulse">
-            Loading student records...
-          </div>
-        ) : filteredStudents.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 shadow-sm">
-            <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500">
-              <FaUserGraduate size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-slate-700">No Students Found</h3>
-            <p className="text-slate-400 text-sm">Try adjusting your filters or search terms.</p>
-          </div>
-        ) : (
-          <>
-            {/* 📱 MOBILE VIEW: CARDS */}
-            <div className="grid grid-cols-1 gap-4 md:hidden">
-              {filteredStudents.map((student) => (
-                <div key={student._id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-4">
-                  {/* Avatar */}
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shrink-0 shadow-md shadow-blue-500/20 overflow-hidden">
-                    {student.photo ? (
-                      <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                    ) : (
-                      student.firstName?.charAt(0) || 'S'
-                    )}
-                  </div>
+        {/* SEARCH & FILTERS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+           <div className="md:col-span-2 relative">
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text" placeholder="Search by name, ID or father's name..." value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all shadow-sm"
+              />
+           </div>
+           <select 
+             className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 outline-none font-semibold text-slate-600"
+             value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}
+           >
+             <option value="">All Classes</option>
+             {classes.map(c => <option key={c._id} value={c._id}>{c.grade} - {c.section}</option>)}
+           </select>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-bold text-slate-800 truncate">{student.firstName} {student.lastName}</h3>
-                        <p className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-1">
-                          ID: {student.studentId || 'N/A'}
-                        </p>
-                      </div>
-                      
-                      {/* === Mobile Action Buttons === */}
-                      <div className="flex gap-2">
-                        <button 
-                            onClick={() => handleViewClick(student)} 
-                            className="text-emerald-500 p-2 hover:bg-emerald-50 rounded-lg transition"
-                        >
-                            <FaEye size={14} />
-                        </button>
-                        <button 
-                            onClick={() => handleEditClick(student)} 
-                            className="text-blue-400 p-2 hover:bg-blue-50 rounded-lg transition"
-                        >
-                            <FaEdit size={14} />
-                        </button>
-                        <button onClick={() => handleDelete(student._id)} className="text-red-400 p-2 hover:bg-red-50 rounded-lg transition">
-                            <FaTrash size={14} />
-                        </button>
-                      </div>
-                    </div>
+           <select 
+             className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 outline-none font-semibold text-slate-600"
+             value={whatsappFilter} onChange={(e) => setWhatsappFilter(e.target.value)}
+           >
+             <option value="all">WhatsApp: All</option>
+             <option value="enabled">Active Alerts</option>
+             <option value="disabled">Inactive Alerts</option>
+           </select>
+        </div>
 
-                    <div className="mt-3 space-y-1 text-sm text-slate-500">
-                      <p className="flex items-center gap-2">
-                        <span className="font-medium text-slate-700">Class:</span> 
-                        {student.class ? (typeof student.class === 'object' ? `${student.class.grade}-${student.class.section}` : "Loaded") : "Unassigned"}
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <FaPhoneAlt className="text-xs opacity-50" /> {student.phone || "No Phone"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 💻 DESKTOP VIEW: TABLE */}
-            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <table className="w-full text-left border-collapse">
+        {/* DATA TABLE */}
+        {loading ? ( <div className="text-center py-20 font-bold text-slate-400">Loading Students...</div> ) : (
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="p-4">Student</th>
-                    <th className="p-4">ID / Roll No</th>
-                    <th className="p-4">Class</th>
-                    <th className="p-4">Contact</th>
-                    <th className="p-4">Father's Name</th>
-                    <th className="p-4 text-right">Actions</th>
+                  <tr className="bg-slate-50/50 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="p-5">Student & Parent</th>
+                    <th className="p-5">Class</th>
+                    <th className="p-5">Waterfall Due</th>
+                    <th className="p-5 text-center">Contact</th>
+                    <th className="p-5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-50">
                   {filteredStudents.map((student) => (
-                    <tr key={student._id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm overflow-hidden">
-                             {student.photo ? (
-                                <img src={student.photo} alt="" className="w-full h-full object-cover" />
-                             ) : (
-                                student.firstName?.charAt(0) || 'S'
-                             )}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-700 text-sm">{student.firstName} {student.lastName}</p>
-                            <p className="text-xs text-slate-400">{student.email}</p>
-                          </div>
-                        </div>
+                    <tr key={student._id} className="hover:bg-blue-50/30 transition-all group">
+                      <td className="p-5">
+                        <div className="font-extrabold text-slate-700 text-base">{student.firstName} {student.lastName}</div>
+                        <div className="text-xs font-bold text-blue-500 uppercase tracking-tighter mb-1">ID: {student.studentId}</div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1 font-semibold"><FaUserGraduate className="text-slate-300" size={10}/> Father: {student.fatherName}</div>
                       </td>
-                      <td className="p-4">
-                        <span className="bg-slate-100 text-slate-600 py-1 px-3 rounded-full text-xs font-semibold">
-                          {student.studentId || "N/A"}
+                      <td className="p-5">
+                        <span className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-black text-slate-600 border border-slate-200">
+                          {student.class?.grade} - {student.class?.section}
                         </span>
                       </td>
-                      <td className="p-4 text-sm text-slate-600 font-medium">
-                        {student.class && typeof student.class === 'object' 
-                            ? `${student.class.grade} - ${student.class.section}` 
-                            : <span className="text-red-400 text-xs">Unassigned</span>}
-                      </td>
-                      <td className="p-4 text-sm text-slate-500">
-                          <div className="flex flex-col">
-                            <span>{student.phone}</span>
+                      <td className="p-5">
+                          <div className="text-xs font-black text-rose-500">
+                             Rs. {(student.feeDetails?.backlog_2024 || 0) + (student.feeDetails?.backlog_2025 || 0) + (student.feeDetails?.tuitionFee_2026 || 0)}
                           </div>
+                          <div className="text-[10px] text-slate-400 font-bold tracking-tight">Incl. Arrears</div>
                       </td>
-                      <td className="p-4 text-sm text-slate-600">
-                        {student.fatherName || "-"}
+                      <td className="p-5">
+                        <div className="flex justify-center gap-3">
+                           {/* ✅ Updated WhatsApp Button */}
+                           <button 
+                             onClick={() => handleWhatsAppMessage(student)}
+                             className={`p-2.5 rounded-xl transition-all shadow-sm ${student.whatsappEnabled ? 'bg-green-50 text-green-600 hover:bg-green-600 hover:text-white' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}
+                             disabled={!student.whatsappEnabled}
+                             title={student.whatsappEnabled ? "Send WhatsApp Message" : "WhatsApp Alerts Disabled"}
+                           >
+                             <FaWhatsapp size={20} />
+                           </button>
+                           <a href={`tel:${student.phone}`} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                             <FaPhoneAlt size={16}/>
+                           </a>
+                        </div>
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          
-                          <button 
-                            onClick={() => handleViewClick(student)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" 
-                            title="View Profile"
-                          >
-                            <FaEye />
-                          </button>
-
-                          <button 
-                            onClick={() => handleEditClick(student)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" 
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </button>
-                          
-                          <button 
-                            onClick={() => handleDelete(student._id)} 
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" 
-                            title="Delete"
-                          >
-                            <FaTrash />
-                          </button>
+                      <td className="p-5 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => handleViewClick(student)} className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl transition-all"><FaEye size={18} /></button>
+                          <button onClick={() => handleEditClick(student)} className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"><FaEdit size={18} /></button>
+                          <button onClick={() => handleDelete(student._id)} className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><FaTrash size={18} /></button>
                         </div>
                       </td>
                     </tr>
@@ -301,26 +206,11 @@ const StudentList = () => {
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         )}
 
-        {/* === EDIT MODAL === */}
-        {/*  */}
-        <EditStudentModal 
-          isOpen={isEditModalOpen} 
-          onClose={() => setIsEditModalOpen(false)} 
-          student={studentToEdit}
-          classes={classes} // ✅ FIXED: Passed classes prop so dropdown works
-          refreshData={fetchData} 
-        />
-
-        {/* === VIEW/PROFILE MODAL === */}
-        <StudentProfileModal 
-          isOpen={isProfileOpen} 
-          onClose={() => setIsProfileOpen(false)} 
-          student={studentToView}
-        />
-
+        <EditStudentModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} student={studentToEdit} classes={classes} refreshData={fetchData} />
+        <StudentProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} student={studentToView} />
       </div>
     </Layout>
   );

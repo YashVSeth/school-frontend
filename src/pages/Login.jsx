@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
+import React, { useState, useEffect } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import { FaEnvelope, FaLock, FaUniversity, FaArrowLeft } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
-import { io } from 'socket.io-client'; // 1. Import Socket.io
+import { io } from 'socket.io-client'; 
 
 import logo from '../assets/logo.png'; 
 
-// 2. Initialize Socket (Pointing to your backend)
+// Initialize Socket
 const socket = io('https://school-backend-30rz.onrender.com'); 
 
 const Login = () => {
@@ -20,7 +20,7 @@ const Login = () => {
   const navigate = useNavigate();
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  // 3. Listen for the "Magic" redirect signal from the server
+  // Listen for the "Magic" redirect signal
   useEffect(() => {
     socket.on("mobile_clicked", (token) => {
       toast.success("Link clicked on mobile! Redirecting...");
@@ -45,15 +45,26 @@ const Login = () => {
         password: formData.password
       });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user || response.data)); 
-      
-      const userRole = response.data.role || (response.data.user && response.data.user.role);
-      toast.success(`Welcome back!`);
+      // --- INTEGRATION START: Data Saving ---
+      const userData = response.data.user || response.data;
+      const userRole = response.data.role || userData.role;
 
-      if (userRole === "Admin" || userRole === "admin") {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(userData)); 
+      localStorage.setItem("role", userRole.toLowerCase()); // role lowercase mein save karna consistent rehta hai
+      
+      // Agar teacher hai toh uska Particular Profile ID save karein
+      if (userData.teacherProfile) {
+        localStorage.setItem("teacherId", userData.teacherProfile);
+      }
+      // --- INTEGRATION END ---
+
+      toast.success(`Welcome back, ${userData.name || 'User'}!`);
+
+      // Role-Based Redirection
+      if (userRole.toLowerCase() === "admin") {
         navigate("/admin/dashboard");
-      } else if (userRole === "Teacher" || userRole === "teacher") {
+      } else if (userRole.toLowerCase() === "teacher") {
         navigate("/teacher/dashboard");
       } else {
         navigate("/student/dashboard");
@@ -68,19 +79,12 @@ const Login = () => {
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
     try {
-        // 4. Tell the server the laptop is waiting for this email's link
         socket.emit("join_reset_room", formData.email);
-
-        const response = await axios.post(`${BASE_URL}/api/auth/forgot-password`, { 
+        await axios.post(`${BASE_URL}/api/auth/forgot-password`, { 
             email: formData.email 
         });
-        
-        toast.info("Email sent! Waiting for you to click it on your phone...", {
-          autoClose: false, // Keep it open so user knows what's happening
-        });
-
+        toast.info("Email sent! Check your phone...");
     } catch (error) {
         toast.error(error.response?.data?.message || "Error sending email.");
         setLoading(false);
@@ -92,7 +96,7 @@ const Login = () => {
       <ToastContainer />
       <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
         
-        {/* --- LEFT SIDE: BRANDING --- */}
+        {/* LEFT SIDE: BRANDING */}
         <div className="md:w-1/2 bg-slate-900 text-white p-10 flex flex-col justify-center items-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                  <FaUniversity size={400} className="absolute -left-20 -top-20" />
@@ -110,7 +114,7 @@ const Login = () => {
             </div>
         </div>
 
-        {/* --- RIGHT SIDE: DYNAMIC FORMS --- */}
+        {/* RIGHT SIDE: DYNAMIC FORMS */}
         <div className="md:w-1/2 p-10 flex flex-col justify-center bg-white">
             {!isForgotPassword ? (
                 <>
@@ -126,7 +130,7 @@ const Login = () => {
                             <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Password" className="w-full pl-10 p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[rgba(195,32,41)] transition" />
                         </div>
                         <div className="flex justify-end">
-                            <button type="button" onClick={() => { setFormData({ ...formData, email: formData.email }); setIsForgotPassword(true); }} className="text-xs text-[rgba(195,32,41)] font-bold hover:underline" >
+                            <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs text-[rgba(195,32,41)] font-bold hover:underline" >
                                 Forgot Password?
                             </button>
                         </div>

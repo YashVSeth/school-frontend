@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  FaHome, FaChalkboardTeacher, FaUserGraduate, FaClipboardList, 
-  FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes 
+import {
+  FaHome, FaChalkboardTeacher, FaUserGraduate, FaClipboardList,
+  FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes
 } from 'react-icons/fa';
 import { FaMoneyBillWave } from 'react-icons/fa';
-
+import { FaLayerGroup } from 'react-icons/fa'; // Import the icon
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    navigate('/'); 
+    navigate('/');
   };
 
   const isActive = (path) => location.pathname === path;
@@ -29,10 +29,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   return (
     <>
       {/* 🔹 MOBILE OVERLAY (Click outside to close) */}
-      <div 
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${
-          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-        }`}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+          }`}
         onClick={toggleSidebar}
       ></div>
 
@@ -43,7 +42,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         lg:translate-x-0 lg:static lg:inset-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        
+
         {/* 🔹 LOGO AREA */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
@@ -55,7 +54,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <p className="text-xs text-slate-400 font-medium">Admin Portal</p>
             </div>
           </div>
-          
+
           {/* Close Button (Mobile Only) */}
           <button onClick={toggleSidebar} className="lg:hidden text-slate-400 hover:text-white p-2">
             <FaTimes size={20} />
@@ -64,41 +63,38 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
         {/* 🔹 NAVIGATION LINKS */}
         <nav className="flex-1 px-4 py-6 overflow-y-auto space-y-2 custom-scrollbar">
-          
-          <Link 
-            to="/admin/dashboard" 
+
+          <Link
+            to="/admin/dashboard"
             onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-              isActive('/admin/dashboard') 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/dashboard')
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
           >
             <FaHome /> <span className="font-medium">Dashboard</span>
           </Link>
 
-          <Link 
-            to="/admin/classes" 
+          <Link
+            to="/admin/classes"
             onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-              isActive('/admin/classes') 
-                ? 'bg-purple-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/classes')
+              ? 'bg-purple-600 text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
           >
             <FaChalkboardTeacher /> <span className="font-medium">Classes</span>
           </Link>
 
           {/* Students Dropdown */}
           <div className="space-y-1">
-            <button 
+            <button
               onClick={() => setShowStudentMenu(!showStudentMenu)}
-              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                isStudentSection ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isStudentSection ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
             >
               <div className="flex items-center gap-3">
-                <FaUserGraduate className={isStudentSection ? 'text-blue-400' : ''} /> 
+                <FaUserGraduate className={isStudentSection ? 'text-blue-400' : ''} />
                 <span className="font-medium">Students</span>
               </div>
               {showStudentMenu || isStudentSection ? <FaChevronDown className="text-xs" /> : <FaChevronRight className="text-xs" />}
@@ -106,15 +102,15 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
             {(showStudentMenu || isStudentSection) && (
               <div className="ml-4 pl-4 border-l-2 border-slate-700 space-y-1 mt-1">
-                <Link 
-                  to="/admin/students/add" 
+                <Link
+                  to="/admin/students/add"
                   onClick={handleLinkClick}
                   className={`block p-2 text-sm rounded ${isActive('/admin/students/add') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'}`}
                 >
                   Add Student
                 </Link>
-                <Link 
-                  to="/admin/students/list" 
+                <Link
+                  to="/admin/students/list"
                   onClick={handleLinkClick}
                   className={`block p-2 text-sm rounded ${isActive('/admin/students/list') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'}`}
                 >
@@ -123,34 +119,37 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               </div>
             )}
           </div>
-          <Link 
-  to="/admin/fees" 
-  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-slate-300 hover:text-white"
->
-  <FaMoneyBillWave />
-  <span className="font-semibold">Fees</span>
-</Link>
-
-          
-
-          <Link 
-            to="/admin/teachers" 
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-              isActive('/admin/teachers') 
-                ? 'bg-gradient-to-r from-orange-500 to-orange-400 shadow-lg text-white' 
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-            }`}
+          <Link
+            to="/admin/fees"
+            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-slate-300 hover:text-white"
           >
-            <FaChalkboardTeacher /> 
+            <FaMoneyBillWave />
+            <span className="font-semibold">Fees</span>
+          </Link>
+          <Link to="/Admin/FeeStructure" className="flex items-center gap-4 p-4 hover:bg-blue-600 rounded-xl transition-all group">
+            <FaLayerGroup className="text-slate-400 group-hover:text-white" />
+            <span className="font-bold text-sm group-hover:text-white">Fee Structure</span>
+          </Link>
+
+
+
+          <Link
+            to="/admin/teachers"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/teachers')
+              ? 'bg-gradient-to-r from-orange-500 to-orange-400 shadow-lg text-white'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaChalkboardTeacher />
             <span className="font-medium">Teachers</span>
           </Link>
         </nav>
 
         {/* 🔹 LOGOUT */}
         <div className="p-4 border-t border-slate-800 shrink-0">
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-slate-800 hover:bg-red-600 transition-colors text-slate-400 hover:text-white"
           >
             <FaSignOutAlt /> <span className="font-medium">Logout</span>
