@@ -24,7 +24,7 @@ const Layout = ({ children }) => {
             <button onClick={toggleSidebar} className="text-slate-600 hover:text-blue-600 p-2 rounded-lg hover:bg-slate-100 transition">
               <FaBars size={24} />
             </button>
-            <span className="font-bold text-lg text-slate-800">EduManager</span>
+            <span className="font-bold text-lg text-slate-800">Radhey Shyam Shakuntala Seth Shikshan Sansthaan </span>
           </div>
         </header>
 

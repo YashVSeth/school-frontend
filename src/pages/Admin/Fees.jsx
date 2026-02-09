@@ -6,7 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { 
   FaSearch, FaWallet, FaArrowRight, 
   FaCalendarAlt, FaUserGraduate, FaHistory, FaCheckCircle, 
-  FaFilter, FaCog, FaSave, FaMoneyBillWave, FaTrash, FaInfoCircle
+  FaFilter, FaCog, FaSave, FaMoneyBillWave, FaTrash, FaInfoCircle,
+  FaFileInvoiceDollar, FaUniversity
 } from 'react-icons/fa';
 
 const Fees = () => {
@@ -20,7 +21,8 @@ const Fees = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [feeSummary, setFeeSummary] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [selectedMonths, setSelectedMonths] = useState([]);
+  
+  const [selectedItems, setSelectedItems] = useState([]); 
   const [historyFilter, setHistoryFilter] = useState('All');
 
   const [editingClassId, setEditingClassId] = useState(null);
@@ -49,7 +51,7 @@ const Fees = () => {
 
   const handleSelectStudent = async (student) => {
     setSelectedStudent(student);
-    setSelectedMonths([]);
+    setSelectedItems([]); 
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -62,63 +64,78 @@ const Fees = () => {
     finally { setLoading(false); }
   };
 
-  // ✅ LOGIC FIXED: Direct Monthly Deduction (Waterfall)
-  // Ab ye Admission Fee ko ignore karke pehle Monthly Fee katega
-  const calculateSpecificDues = () => {
+  // ✅ CORE LOGIC: Har Cheez ka exact Due calculate karna (Waterfall)
+  const calculateDues = () => {
     if (!feeSummary || !feeSummary.structure) return {};
 
     const monthlyFee = feeSummary.structure.monthlyTuition || 0;
     const admissionFee = feeSummary.structure.admissionFee || 0;
     const examFee = feeSummary.structure.examFee || 0;
+    
+    // Total saal ki fee
     const yearlyTotal = (monthlyFee * 12) + admissionFee + examFee;
     
-    // Total Paid Amount nikalo
+    // Ab tak kitna pay kiya hai (Yearly Total - Current Outstanding)
     let totalPaidSoFar = yearlyTotal - (feeSummary.totalDue || 0);
 
     const duesMap = {};
 
-    // Note: Hum Admission Fee ko logic se hata rahe hain taaki
-    // paisa seedha Mahino me dikhe. 
-    // Logic: Paisa aaya -> Seedha April me gaya -> Fir May me gaya...
-    
+    // 1. Admission Fee Logic
+    if (totalPaidSoFar >= admissionFee) {
+        duesMap['admission'] = 0; // Paid
+        totalPaidSoFar -= admissionFee;
+    } else {
+        duesMap['admission'] = admissionFee - totalPaidSoFar; // Partial Due
+        totalPaidSoFar = 0;
+    }
+
+    // 2. Exam Fee Logic
+    if (totalPaidSoFar >= examFee) {
+        duesMap['exam'] = 0; // Paid
+        totalPaidSoFar -= examFee;
+    } else {
+        duesMap['exam'] = examFee - totalPaidSoFar; // Partial Due
+        totalPaidSoFar = 0;
+    }
+
+    // 3. Monthly Fee Logic (Waterfall Distribution)
     months.forEach(month => {
         if (totalPaidSoFar >= monthlyFee) {
-            // Agar paisa monthly fee se jyada hai, ye mahina clear
-            duesMap[month] = 0;
+            duesMap[month] = 0; // Fully Paid
             totalPaidSoFar -= monthlyFee;
         } else if (totalPaidSoFar > 0) {
-            // Agar paisa kam hai (Partial Payment)
-            // Example: Fee 600, Paid 200. Due = 400.
+            // Partial Payment Logic:
+            // Agar monthly fee 600 hai aur 100 bache hain, to 100 kat jayenge
+            // Due bachega 500
             duesMap[month] = monthlyFee - totalPaidSoFar;
-            totalPaidSoFar = 0; // Paisa khatam
+            totalPaidSoFar = 0; 
         } else {
-            // Paisa nahi bacha, Full Due
-            duesMap[month] = monthlyFee;
+            duesMap[month] = monthlyFee; // Full Due
         }
     });
 
     return duesMap;
   };
 
-  const toggleMonth = (month) => {
-    const updated = selectedMonths.includes(month) 
-      ? selectedMonths.filter(m => m !== month) 
-      : [...selectedMonths, month];
+  const toggleItem = (itemId) => {
+    const updated = selectedItems.includes(itemId) 
+      ? selectedItems.filter(i => i !== itemId) 
+      : [...selectedItems, itemId];
     
-    setSelectedMonths(updated);
+    setSelectedItems(updated);
 
     if (updated.length > 0) {
-        const specificDues = calculateSpecificDues();
+        // ✅ Calculate sum based on PARTIAL logic
+        const duesMap = calculateDues();
         let totalToPay = 0;
         
-        // Sirf selected months ka current due jodo
-        updated.forEach(m => {
-            totalToPay += (specificDues[m] || 0);
+        updated.forEach(id => {
+            totalToPay += (duesMap[id] || 0);
         });
 
         setPaymentAmount(totalToPay);
     } else {
-        setPaymentAmount('');
+        setPaymentAmount(''); // Reset to empty if nothing selected
     }
   };
 
@@ -133,12 +150,12 @@ const Fees = () => {
       await axios.post(`${BASE_URL}/api/fees/pay`, {
         studentId: selectedStudent._id,
         amount: amount,
-        months: selectedMonths
+        months: selectedItems
       }, { headers: { Authorization: `Bearer ${token}` } });
       
       toast.success("Payment Successful!");
-      setSelectedMonths([]);
-      handleSelectStudent(selectedStudent); // Refresh karega to updated calculation dikhegi
+      setSelectedItems([]);
+      handleSelectStudent(selectedStudent); 
     } catch (err) { toast.error("Payment failed"); } 
     finally { setLoading(false); }
   };
@@ -156,11 +173,27 @@ const Fees = () => {
 
   const getMonthlyRate = () => feeSummary?.structure?.monthlyTuition || 0;
 
-  const getBadgeValue = () => {
-    if (!paymentAmount) return 0;
-    const currentTotalDue = feeSummary?.totalDue || 0;
-    const paying = Number(paymentAmount) || 0;
-    return Math.max(0, currentTotalDue - paying);
+  // ✅ DISPLAY LOGIC: Badge Text
+  const getBadgeDisplay = () => {
+      // Case 1: Nothing selected -> Show Total Outstanding
+      if (selectedItems.length === 0) {
+          return {
+              label: "Total Outstanding",
+              amount: feeSummary?.totalDue || 0,
+              color: "bg-rose-50 text-rose-600"
+          };
+      }
+
+      // Case 2: Items selected -> Show sum of THEIR dues (e.g. 500 for Apr)
+      const duesMap = calculateDues();
+      let selectedDueTotal = 0;
+      selectedItems.forEach(id => selectedDueTotal += (duesMap[id] || 0));
+
+      return {
+          label: "Selected Due",
+          amount: selectedDueTotal,
+          color: "bg-blue-50 text-blue-600"
+      };
   };
 
   const filteredStudents = students.filter(s => {
@@ -209,6 +242,9 @@ const Fees = () => {
      setStructureForm(prev => ({ ...prev, yearlyTotal: total }));
   }, [structureForm.monthlyTuition, structureForm.admissionFee, structureForm.examFee]);
 
+  const duesMap = calculateDues();
+  const badgeData = getBadgeDisplay();
+
   return (
     <Layout>
       <div className="h-[calc(100vh-100px)] flex flex-col bg-slate-50 font-sans overflow-hidden">
@@ -255,8 +291,12 @@ const Fees = () => {
                                         <h2 className="text-2xl font-black text-slate-800">{selectedStudent.firstName} {selectedStudent.lastName}</h2>
                                         <div className="flex gap-2 mt-1">
                                             <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-2 py-1 rounded">Monthly: ₹{getMonthlyRate()}</span>
-                                            <span className={`text-[10px] font-black px-2 py-1 rounded transition-all ${paymentAmount ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                Due: ₹{getBadgeValue().toLocaleString()}
+                                            
+                                            {/* ✅ DYNAMIC BADGE */}
+                                            {/* Shows "Total Outstanding" when empty */}
+                                            {/* Shows "Selected Due" (Partial logic) when items selected */}
+                                            <span className={`text-[10px] font-black px-2 py-1 rounded transition-all ${badgeData.color}`}>
+                                                {badgeData.label}: ₹{badgeData.amount.toLocaleString()}
                                             </span>
                                         </div>
                                     </div>
@@ -268,25 +308,47 @@ const Fees = () => {
                             </div>
 
                             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                                <h3 className="font-black text-slate-800 mb-6 flex items-center gap-2"><FaCalendarAlt className="text-blue-500"/> Select Months to Pay</h3>
+                                <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2 text-sm"><FaUniversity className="text-purple-500"/> One-Time Fees</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                                    {['admission', 'exam'].map(type => {
+                                        const due = duesMap[type] || 0;
+                                        const isPaid = due === 0;
+                                        const isSelected = selectedItems.includes(type);
+                                        const label = type === 'admission' ? 'Admission Fee' : 'Exam Fee';
+                                        
+                                        return (
+                                            <button 
+                                                key={type}
+                                                onClick={() => toggleItem(type)}
+                                                className={`py-4 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1
+                                                    ${isSelected ? 'bg-purple-600 border-purple-600 text-white shadow-lg' : 
+                                                      isPaid ? 'bg-emerald-50 border-emerald-100 text-emerald-600 opacity-60 cursor-default' : 'border-slate-100 text-slate-500 hover:border-purple-200 bg-white'}`}
+                                            >
+                                                <span className="text-[10px] font-black uppercase tracking-wider">{label}</span>
+                                                {isPaid ? <FaCheckCircle/> : <span className="font-black text-sm">₹{due}</span>}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+
+                                <h3 className="font-black text-slate-800 mb-6 flex items-center gap-2 text-sm border-t border-slate-100 pt-6"><FaCalendarAlt className="text-blue-500"/> Monthly Fees</h3>
                                 <div className="grid grid-cols-4 md:grid-cols-6 gap-3 mb-8">
                                     {months.map(m => {
-                                        // Highlight months that are fully paid
-                                        const dues = calculateSpecificDues();
-                                        const isPaid = dues[m] === 0;
+                                        const isPaid = duesMap[m] === 0;
                                         return (
                                             <button 
                                                 key={m} 
-                                                onClick={() => toggleMonth(m)}
+                                                onClick={() => toggleItem(m)}
                                                 className={`py-3 rounded-xl font-bold text-xs border-2 transition-all 
-                                                    ${selectedMonths.includes(m) ? 'bg-blue-600 border-blue-600 text-white' : 
-                                                      isPaid ? 'bg-emerald-50 border-emerald-100 text-emerald-600 opacity-50' : 'border-slate-100 text-slate-400 hover:border-blue-200'}`}
+                                                    ${selectedItems.includes(m) ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 
+                                                      isPaid ? 'bg-emerald-50 border-emerald-100 text-emerald-600 opacity-50 cursor-default' : 'border-slate-100 text-slate-400 hover:border-blue-200 bg-white'}`}
                                             >
                                                 {m}
                                             </button>
                                         )
                                     })}
                                 </div>
+
                                 <form onSubmit={handlePayment} className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl">
                                     <div className="flex items-center gap-4 mb-4">
                                         <div className="flex-1 relative">
@@ -297,13 +359,15 @@ const Fees = () => {
                                     </div>
                                     <div className="flex justify-between items-center text-xs font-bold text-slate-400 px-2">
                                         <div>
-                                            {selectedMonths.length > 0 ? (
-                                                <span className="text-emerald-400"><FaCheckCircle className="inline mr-1"/> Paying for {selectedMonths.length} month(s)</span>
+                                            {selectedItems.length > 0 ? (
+                                                <span className="text-emerald-400"><FaCheckCircle className="inline mr-1"/> Paying for {selectedItems.length} item(s)</span>
                                             ) : (
-                                                <span className="text-slate-400"><FaInfoCircle className="inline mr-1"/> Select months to pay</span>
+                                                <span className="text-slate-400"><FaInfoCircle className="inline mr-1"/> Select items to pay</span>
                                             )}
                                         </div>
-                                        <div className={paymentAmount ? "text-emerald-400 font-black" : ""}>Est. Remaining: ₹{getBadgeValue().toLocaleString()}</div>
+                                        <div className={paymentAmount ? "text-emerald-400 font-black" : ""}>
+                                            {/* Optional: Show remaining only if input differs from calculated amount */}
+                                        </div>
                                     </div>
                                 </form>
                             </div>
@@ -330,7 +394,11 @@ const Fees = () => {
                                                 <div><p className="font-black text-slate-800 text-lg">₹{trx.amount.toLocaleString()}</p><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{new Date(trx.date).toLocaleDateString()} • {new Date(trx.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p></div>
                                             </div>
                                             <div className="flex gap-2 flex-wrap justify-end max-w-[50%]">
-                                                {trx.months && trx.months.length > 0 ? trx.months.map(m => <span key={m} className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">{m}</span>) : <span className="text-[10px] font-bold text-slate-300">No specific month</span>}
+                                                {trx.months && trx.months.length > 0 ? trx.months.map(m => (
+                                                    <span key={m} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${m === 'admission' || m === 'exam' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                        {m === 'admission' ? 'Adm. Fee' : m === 'exam' ? 'Exam Fee' : m}
+                                                    </span>
+                                                )) : <span className="text-[10px] font-bold text-slate-300">No specific items</span>}
                                             </div>
                                         </div>
                                         ))
@@ -343,6 +411,7 @@ const Fees = () => {
                 </>
             )}
 
+            {/* Structure Mode (Hidden for brevity, same as previous) */}
             {viewMode === 'structure' && (
                 <div className="flex-1 flex overflow-hidden">
                     <div className="w-64 bg-white border-r border-slate-200 overflow-y-auto p-4 space-y-2">

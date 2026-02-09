@@ -50,7 +50,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <FaUniversity className="text-xl text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-wide">EduManager</h1>
+              <h1 className="text-lg font-bold tracking-wide">Radhe Shyam</h1>
               <p className="text-xs text-slate-400 font-medium">Admin Portal</p>
             </div>
           </div>
@@ -126,10 +126,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <FaMoneyBillWave />
             <span className="font-semibold">Fees</span>
           </Link>
-          <Link to="/Admin/FeeStructure" className="flex items-center gap-4 p-4 hover:bg-blue-600 rounded-xl transition-all group">
-            <FaLayerGroup className="text-slate-400 group-hover:text-white" />
-            <span className="font-bold text-sm group-hover:text-white">Fee Structure</span>
-          </Link>
+          
 
 
 
