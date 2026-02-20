@@ -27,7 +27,6 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // 1. Fetch Attendance Stats (Mocked or Real Endpoint)
-      // Ensure your backend has this route, or this will return 404
       try {
         const attRes = await axios.get(`${BASE_URL}/api/attendance/stats/${student._id}`, { headers });
         setAttendanceStats(attRes.data || { present: 0, absent: 0, total: 0, percentage: 0 });
@@ -97,6 +96,15 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
                  <span className="flex items-center gap-1"><FaPhoneAlt /> {student.phone || "No Phone"}</span>
                  <span className="flex items-center gap-1"><FaEnvelope /> {student.email || "No Email"}</span>
               </div>
+
+              {/* ✅ NEW: Height and Weight Display Added Here */}
+              {(student.height || student.weight) && (
+                <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs text-slate-300 pt-1 font-bold">
+                   {student.height && <span className="bg-slate-700/50 px-3 py-1 rounded-full">Height: {student.height}</span>}
+                   {student.weight && <span className="bg-slate-700/50 px-3 py-1 rounded-full">Weight: {student.weight}</span>}
+                </div>
+              )}
+
             </div>
           </div>
         </div>

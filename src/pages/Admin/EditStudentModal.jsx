@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { FaUserEdit, FaTimes, FaSave } from 'react-icons/fa';
 
 const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] }) => {
-  // ✅ 1. Split Name into First/Last to match database schema
+  // ✅ 1. Added height and weight to formData
   const [formData, setFormData] = useState({
     firstName: '', 
     lastName: '', 
@@ -14,7 +14,9 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
     phone: '', 
     email: '', 
     dob: '', 
-    gender: ''
+    gender: '',
+    height: '', // Added height
+    weight: ''  // Added weight
   });
   
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,7 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
 
   useEffect(() => {
     if (isOpen && student) {
-        // ✅ 2. Pre-fill form safely
+        // ✅ 2. Pre-fill form safely including height and weight
         setFormData({
             firstName: student.firstName || '',
             lastName: student.lastName || '',
@@ -33,7 +35,9 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
             phone: student.phone || '',
             email: student.email || '',
             dob: student.dob ? new Date(student.dob).toISOString().split('T')[0] : '', 
-            gender: student.gender || ''
+            gender: student.gender || '',
+            height: student.height || '', // Pre-fill height
+            weight: student.weight || ''  // Pre-fill weight
         });
     }
   }, [isOpen, student]);
@@ -58,9 +62,8 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
     try {
       const token = localStorage.getItem('token');
       
-      // ✅ FIX: Ensure URL is correct. (If your backend is singular '/student', change 'students' to 'student' below)
       const url = `${BASE_URL}/api/students/${student._id}`;
-      console.log("Request URL:", url); // <--- Check this in your browser console if 404 persists
+      console.log("Request URL:", url); 
 
       await axios.put(url, formData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -120,7 +123,6 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Class</label>
-                    {/* ✅ Uses the 'classes' prop safely with fallback */}
                     <select name="class" value={formData.class} onChange={handleChange} required 
                         className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white transition">
                         <option value="">Select Class</option>
@@ -157,6 +159,20 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                     </select>
+                </div>
+
+                {/* ✅ 3. Added Height Field */}
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Height</label>
+                    <input type="text" name="height" value={formData.height} onChange={handleChange} placeholder="e.g. 150 cm"
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                </div>
+
+                {/* ✅ 4. Added Weight Field */}
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Weight</label>
+                    <input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 45 kg"
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
                 </div>
 
             </form>

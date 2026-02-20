@@ -2,14 +2,21 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaChalkboardTeacher, FaRupeeSign, FaLayerGroup } from 'react-icons/fa';
 import Layout from '../../components/Layout';
 import ClassDetailsModal from './ClassDetailsModal';
 
 const Classes = () => {
   const [classes, setClasses] = useState([]);
   
-  const [classForm, setClassForm] = useState({ grade: '', section: '' });
+  // ✅ UPDATE: Fees fields added to state
+  const [classForm, setClassForm] = useState({ 
+    grade: '', 
+    section: '', 
+    monthlyFee: '', 
+    yearlyFee: '' 
+  });
+
   const [subjectForm, setSubjectForm] = useState({ name: '' });
   
   const [selectedClass, setSelectedClass] = useState(null);
@@ -17,7 +24,7 @@ const Classes = () => {
 
   const BASE_URL = import.meta.env.VITE_API_URL;
   const gradeOptions = ["LKG", "UKG", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
-  const sectionOptions = ["-", "A", "B", "C"];
+  const sectionOptions = ["A", "B", "C", "D", "E"];
 
   useEffect(() => { fetchClasses(); }, []);
 
@@ -33,11 +40,14 @@ const Classes = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
+      // ✅ Sending Fees Data to Backend
       await axios.post(`${BASE_URL}/api/classes`, classForm, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success("Class Added!");
-      setClassForm({ grade: '', section: '' });
+      toast.success("Class Added Successfully!");
+      setClassForm({ grade: '', section: '', monthlyFee: '', yearlyFee: '' });
       fetchClasses();
-    } catch (error) { toast.error("Failed to add class"); }
+    } catch (error) { 
+        toast.error(error.response?.data?.message || "Failed to add class"); 
+    }
   };
 
   const handleDeleteClass = async (id, e) => {
@@ -70,34 +80,63 @@ const Classes = () => {
     <Layout>
       <ToastContainer />
       
-      {/* Changed: Padding reduced on mobile (p-4), normal on desktop (p-6) */}
       <div className="flex flex-col lg:flex-row gap-6 animate-fade-in p-2 sm:p-0">
         
         {/* === LEFT SIDE: FORMS === */}
-        {/* Changed: Full width on mobile, 1/3 on large screens */}
         <div className="w-full lg:w-1/3 space-y-6">
           
+          {/* ADD CLASS FORM */}
           <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold mb-4 text-slate-800">Add New Class</h2>
+            <h2 className="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">
+                <FaLayerGroup className="text-blue-600"/> Add New Class
+            </h2>
             <form onSubmit={handleAddClass} className="space-y-4">
-              <select name="grade" value={classForm.grade} onChange={(e)=>setClassForm({...classForm, grade: e.target.value})} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
-                <option value="">Select Grade</option>
-                {gradeOptions.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-              <select name="section" value={classForm.section} onChange={(e)=>setClassForm({...classForm, section: e.target.value})} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
-                <option value="">Select Section</option>
-                {sectionOptions.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition active:scale-95">Add Class</button>
+              <div className="grid grid-cols-2 gap-3">
+                  <select name="grade" value={classForm.grade} onChange={(e)=>setClassForm({...classForm, grade: e.target.value})} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                    <option value="">Grade</option>
+                    {gradeOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                  <select name="section" value={classForm.section} onChange={(e)=>setClassForm({...classForm, section: e.target.value})} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" required>
+                    <option value="">Section</option>
+                    {sectionOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+              </div>
+
+              {/* ✅ NEW: Fee Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-slate-400">₹</span>
+                    <input 
+                        type="number" 
+                        placeholder="Monthly Fee" 
+                        value={classForm.monthlyFee}
+                        onChange={(e)=>setClassForm({...classForm, monthlyFee: e.target.value})}
+                        className="w-full border p-2.5 pl-7 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-slate-400">₹</span>
+                    <input 
+                        type="number" 
+                        placeholder="Yearly Fee" 
+                        value={classForm.yearlyFee}
+                        onChange={(e)=>setClassForm({...classForm, yearlyFee: e.target.value})}
+                        className="w-full border p-2.5 pl-7 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+              </div>
+
+              <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-200">Add Class</button>
             </form>
           </div>
 
+          {/* CREATE SUBJECT FORM */}
           <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
             <h2 className="text-lg font-bold mb-4 text-slate-800">Create Subject</h2>
             <form onSubmit={handleAddSubject} className="space-y-4">
               <input 
                 type="text" 
-                placeholder="Subject Name" 
+                placeholder="Subject Name (e.g. Mathematics)" 
                 value={subjectForm.name} 
                 onChange={(e)=>setSubjectForm({ name: e.target.value })} 
                 className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
@@ -112,7 +151,6 @@ const Classes = () => {
         <div className="w-full lg:w-2/3 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
           <h2 className="text-xl font-bold mb-6 text-slate-800">Existing Classes</h2>
           
-          {/* Changed: Grid 1 col on mobile, 2 on sm, 3 on xl */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {classes.map((cls) => (
               <div 
@@ -127,18 +165,46 @@ const Classes = () => {
                   <FaTrash size={14} />
                 </button>
 
-                <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600">{cls.grade}</h3>
-                <p className="text-slate-500 text-sm">Section: <span className="font-semibold">{cls.section}</span></p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600">
+                            {cls.grade} - {cls.section}
+                        </h3>
+                        {/* ✅ Display Fees */}
+                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                            <FaRupeeSign size={10}/> {cls.feeStructure?.monthlyFee || 0}/mo
+                        </p>
+                    </div>
+                </div>
+
+                {/* ✅ Display Class Teacher */}
+                <div className="mt-3 py-2 border-t border-slate-200/60">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Class Teacher</p>
+                    <div className="flex items-center gap-2">
+                        <FaChalkboardTeacher className={cls.classTeacher ? "text-green-500" : "text-red-300"} />
+                        <span className={`text-xs font-bold ${cls.classTeacher ? "text-slate-700" : "text-red-400 italic"}`}>
+                            {cls.classTeacher ? cls.classTeacher.fullName : "Not Assigned"}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Display Subjects */}
+                <div className="mt-2 flex flex-wrap gap-2">
                    {cls.subjects?.slice(0, 3).map((s, i) => (
                       <span key={i} className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                        {s.subject?.name}
+                        {s.subjectName || "Subject"} {/* ✅ Fixed property name */}
                       </span>
                    ))}
                    {cls.subjects?.length > 3 && <span className="text-[10px] text-slate-400">+{cls.subjects.length - 3} more</span>}
                 </div>
               </div>
             ))}
+            
+            {classes.length === 0 && (
+                <div className="col-span-full text-center py-10 text-slate-400">
+                    No classes added yet.
+                </div>
+            )}
           </div>
         </div>
 

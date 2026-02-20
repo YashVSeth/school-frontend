@@ -37,7 +37,8 @@ const AddStudent = () => {
     address: '',        
     dob: '',            
     gender: '',         
-    bloodGroup: '',     
+    bloodGroup: '', 
+    height: '', weight: '',    
     whatsappEnabled: true,
     isUsingTransport: false
   });
@@ -87,6 +88,8 @@ const AddStudent = () => {
         dob: formData.dob,
         gender: formData.gender,
         bloodGroup: formData.bloodGroup,
+        height: formData.height, // ✅ Added to payload
+        weight: formData.weight,
         class: formData.class,
         whatsappEnabled: formData.whatsappEnabled,
         feeDetails: {
@@ -165,6 +168,13 @@ const AddStudent = () => {
                     </select>
                   </div>
                </div>
+               {/* ✅ NEW HEIGHT AND WEIGHT FIELDS */}
+               <div className="grid grid-cols-2 gap-4">
+                  <InputField label="Height" name="height" value={formData.height} onChange={handleChange} placeholder="e.g. 150 cm" />
+                  <InputField label="Weight" name="weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 45 kg" />
+               </div>
+               
+              
                <InputField label="Full Address" name="address" value={formData.address} onChange={handleChange} icon={<FaMapMarkerAlt/>} />
             </div>
 

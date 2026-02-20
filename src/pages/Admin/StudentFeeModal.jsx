@@ -1,337 +1,590 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaTimes, FaPrint, FaSave, FaHistory, FaExclamationTriangle } from 'react-icons/fa';
+import { 
+  FaTimes, FaCheckCircle, FaExclamationTriangle, 
+  FaFileDownload, FaFilter, FaChevronRight, FaPrint, FaSearch, FaArrowLeft
+} from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useReactToPrint } from 'react-to-print';
 
+const ACADEMIC_MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+
 const StudentFeeModal = ({ isOpen, onClose, student }) => {
-  const [amount, setAmount] = useState('');
-  const [month, setMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
+  const [invoices, setInvoices] = useState([]);
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
+  const [amountPaid, setAmountPaid] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [history, setHistory] = useState([]);
+  const [feeStructure, setFeeStructure] = useState({ monthlyTuition: 0, admissionFee: 0, examFee: 0 });
   const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [processing, setProcessing] = useState(false);
+
+  const [isViewingReceipts, setIsViewingReceipts] = useState(false);
+  const [receiptToPrint, setReceiptToPrint] = useState(null);
   
-  const componentRef = useRef(); 
+  const componentRef = useRef(null); // ✅ Added null initialization
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  // ✅ UPDATED: Get the REAL fee from the database (or default to 0)
-  const MONTHLY_FEE = student?.class?.feeStructure?.monthlyFee || 0;
-
-  const allMonths = [
-    "January", "February", "March", "April", "May", "June", 
-    "July", "August", "September", "October", "November", "December"
-  ];
-
   useEffect(() => {
-    if (student) {
-      fetchHistory();
+    if (student && isOpen) {
+      setIsViewingReceipts(false); 
+      refreshData();
     }
-  }, [student]);
+  }, [student, isOpen]);
 
-  const fetchHistory = async () => {
+  const refreshData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${BASE_URL}/api/fees/student/${student._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setHistory(res.data);
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const invRes = await axios.get(`${BASE_URL}/api/fees/invoices/${student._id}`, { headers });
+      const allInvoices = await axios.get(`${BASE_URL}/api/fees/invoices/${student._id}?all=true`, { headers }).catch(() => invRes); 
+      setInvoices(allInvoices.data || invRes.data);
+
+      const statusRes = await axios.get(`${BASE_URL}/api/fees/status/${student._id}`, { headers });
+      setHistory(statusRes.data.history || []);
+      setFeeStructure(statusRes.data.structure || { monthlyTuition: 0, admissionFee: 0, examFee: 0 });
+
+      setSelectedInvoices([]);
+      setAmountPaid('');
     } catch (err) {
-      console.error(err);
+      toast.error("Error refreshing financial data");
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePayment = async (e) => {
+  const toggleSelection = async (title, defaultAmount) => {
+    let inv = invoices.find(i => i.title.includes(title));
+
+    if (!inv) {
+      if (!defaultAmount || defaultAmount <= 0) return toast.warn("Fee amount is zero. Check Fee Structures.");
+      const toastId = toast.loading(`Generating bill for ${title}...`);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.post(`${BASE_URL}/api/fees/invoices`, {
+          studentId: student._id, title: `${title} Tuition`, amount: defaultAmount
+        }, { headers: { Authorization: `Bearer ${token}` } });
+        inv = res.data.invoice;
+        setInvoices(prev => [...prev, inv]);
+        toast.dismiss(toastId);
+      } catch (error) {
+        toast.update(toastId, { render: "Failed to generate bill", type: "error", isLoading: false, autoClose: 2000 });
+        return;
+      }
+    }
+
+    if (inv.status === 'Paid') return;
+
+    setSelectedInvoices(prev => 
+      prev.includes(inv._id) ? prev.filter(id => id !== inv._id) : [...prev, inv._id]
+    );
+  };
+
+  const handleCheckout = async (e) => {
     e.preventDefault();
-    if (!amount) return toast.error("Enter amount");
-    
-    setSubmitting(true);
+    if (selectedInvoices.length === 0) return toast.warn("Select at least one pending due to pay");
+    if (!amountPaid || Number(amountPaid) <= 0) return toast.error("Enter payment amount");
+
+    setProcessing(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${BASE_URL}/api/fees`, {
+      await axios.post(`${BASE_URL}/api/fees/pay-cart`, {
         studentId: student._id,
-        amount: Number(amount),
-        feeType: `Tuition - ${month}`,
+        amountPaid: Number(amountPaid),
         paymentMethod,
-        status: 'Paid',
-        date: new Date()
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+        invoicesToPay: selectedInvoices
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
-      toast.success("Payment Recorded!");
-      setAmount('');
-      fetchHistory(); 
+      toast.success("Payment Successful!");
+      refreshData();
     } catch (error) {
-      toast.error("Failed to save payment");
+      toast.error("Payment Failed");
     } finally {
-      setSubmitting(false);
+      setProcessing(false);
     }
   };
 
-  const getMonthStats = (targetMonth) => {
-    const payments = history.filter(h => h.feeType.includes(targetMonth));
-    const totalPaid = payments.reduce((sum, record) => sum + record.amount, 0);
-    
-    // ✅ Uses the dynamic MONTHLY_FEE variable
-    const pending = MONTHLY_FEE - totalPaid;
-
-    return { 
-      totalPaid, 
-      pending: pending > 0 ? pending : 0, 
-      status: pending <= 0 ? 'Paid' : 'Pending' 
-    };
-  };
-
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    documentTitle: `Receipt_${student?.firstName || 'Student'}`,
+  // ✅ V3 COMPATIBLE PRINT LOGIC
+  const handlePrint = useReactToPrint({ 
+    contentRef: componentRef, // Fixed for v3 update
+    documentTitle: `${student?.firstName}_Fee_Receipt`
   });
+
+  const triggerPrint = (txn) => {
+    setReceiptToPrint(txn);
+    setTimeout(() => {
+      handlePrint();
+    }, 150);
+  };
 
   if (!isOpen || !student) return null;
 
-  const classDisplay = student.class?.grade 
-    ? `${student.class.grade} - ${student.class.section}` 
-    : (student.class || 'N/A');
+  const totalOutstanding = invoices.reduce((sum, inv) => sum + (inv.amount - inv.amountPaid), 0);
+  const totalBilled = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalPaid = invoices.reduce((sum, inv) => sum + inv.amountPaid, 0);
+  const percentPaid = totalBilled > 0 ? Math.round((totalPaid / totalBilled) * 100) : 0;
+  
+  const selectedTotal = invoices
+    .filter(inv => selectedInvoices.includes(inv._id))
+    .reduce((sum, inv) => sum + (inv.amount - inv.amountPaid), 0);
 
-  const filteredHistory = history.filter(h => h.feeType.includes(month));
+  const activeInvoice = invoices.find(inv => inv.status === 'Partially Paid') || invoices.find(inv => inv.status !== 'Paid');
+  const activePrintTxn = receiptToPrint || (history.length > 0 ? history[0] : null);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-6 animate-fade-in font-sans">
+      <div className="bg-slate-50 w-full max-w-7xl rounded-2xl shadow-2xl flex flex-col h-[95vh] overflow-hidden border border-slate-200 transition-all">
         
-        {/* --- Header --- */}
-        <div className="bg-slate-800 text-white p-5 flex justify-between items-center shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold">{student.firstName} {student.lastName}</h2>
-            <p className="text-slate-400 text-sm">Class: {classDisplay} | ID: {student.studentId}</p>
+        {/* --- GLOBAL TOP HEADER --- */}
+        <div className="bg-white px-8 py-5 flex justify-between items-center shrink-0 border-b border-slate-200 shadow-sm z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-orange-100 text-[#F05A28] rounded-full flex items-center justify-center text-2xl font-black border-2 border-orange-200 shadow-sm">
+              {student.firstName?.charAt(0)}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">{student.firstName} {student.lastName}</h2>
+              <div className="flex items-center gap-2 text-slate-500 text-xs font-bold mt-1">
+                <span className="text-[#F05A28] bg-orange-50 px-2 py-0.5 rounded uppercase tracking-wider">ID: {student.studentId}</span>
+                <span className="flex items-center gap-1"><FaChevronRight size={8}/> Grade {student.class?.grade || 'N/A'}</span>
+              </div>
+            </div>
           </div>
-          <button onClick={onClose} className="hover:text-red-400 transition"><FaTimes size={24} /></button>
+          
+          <div className="flex items-center gap-6">
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Outstanding</p>
+              <p className="text-2xl font-black text-[#F05A28]">₹{totalOutstanding.toLocaleString()}</p>
+            </div>
+            <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-800 rounded-full transition-colors">
+              <FaTimes size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col md:flex-row h-full overflow-hidden">
-          
-          {/* --- LEFT COLUMN --- */}
-          <div className="w-full md:w-5/12 p-6 bg-slate-50 border-r border-slate-200 overflow-y-auto flex flex-col gap-6">
-              
-             {/* Warning if no fee set */}
-             {MONTHLY_FEE === 0 && (
-               <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-lg flex items-center gap-2 text-sm">
-                 <FaExclamationTriangle />
-                 <span>Warning: No Fee Structure set for this class.</span>
-               </div>
-             )}
-
-             {/* Payment Form */}
-             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-               <h3 className="font-bold text-slate-700 mb-4 text-lg border-b pb-2">Record Payment</h3>
-               <form onSubmit={handlePayment} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Select Month</label>
-                    <select 
-                      value={month} 
-                      onChange={(e) => setMonth(e.target.value)}
-                      className="w-full p-2.5 border rounded-lg font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      {allMonths.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Amount</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
-                      <input 
-                        type="number" 
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="w-full pl-8 p-2.5 border rounded-lg font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Method</label>
-                      <select 
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-full p-2.5 border rounded-lg text-slate-700 bg-white"
-                      >
-                         <option>Cash</option>
-                         <option>Online</option>
-                         <option>Cheque</option>
-                      </select>
-                  </div>
-
-                  <button 
-                    disabled={submitting}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all flex justify-center items-center gap-2"
-                  >
-                      {submitting ? 'Saving...' : <><FaSave /> Save Payment</>}
-                  </button>
-               </form>
-             </div>
-
-             {/* Monthly Status Table */}
-             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="bg-slate-100 px-4 py-3 font-bold text-slate-700 text-sm border-b border-slate-200 flex justify-between items-center">
-                  <span>Fee Summary</span>
-                  <span className="text-xs font-normal text-slate-500">Monthly Due: <span className="font-bold text-slate-800">${MONTHLY_FEE}</span></span>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 sticky top-0 z-10 text-xs text-slate-500 uppercase">
-                      <tr>
-                        <th className="px-4 py-2">Month</th>
-                        <th className="px-4 py-2 text-right">Paid</th>
-                        <th className="px-4 py-2 text-right">Pending</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {allMonths.map((m) => {
-                        const { totalPaid, pending, status } = getMonthStats(m);
-                        const isCurrentSelection = m === month;
-                        
-                        return (
-                          <tr 
-                            key={m} 
-                            onClick={() => setMonth(m)} 
-                            className={`cursor-pointer transition ${isCurrentSelection ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
-                          >
-                            <td className="px-4 py-2.5 font-medium text-slate-700 flex items-center gap-2">
-                               <div className={`w-2 h-2 rounded-full ${status === 'Paid' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                               {m}
-                            </td>
-                            <td className="px-4 py-2.5 text-right font-bold text-emerald-600">
-                              ${totalPaid}
-                            </td>
-                            <td className={`px-4 py-2.5 text-right font-bold ${pending > 0 ? 'text-red-500' : 'text-slate-300'}`}>
-                              ${pending}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-             </div>
-          </div>
-
-          {/* --- RIGHT COLUMN (History & Receipt) --- */}
-          <div className="w-full md:w-7/12 p-6 flex flex-col bg-white overflow-hidden">
+        {/* --- DYNAMIC BODY CONTENT --- */}
+        {isViewingReceipts ? (
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-slate-50 flex flex-col">
             
-            <div className="flex justify-between items-center mb-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
-               <div>
-                 <div className="text-blue-500 text-xs font-bold uppercase tracking-wider">Viewing Details For</div>
-                 <h3 className="font-bold text-blue-800 text-xl flex items-center gap-2">
-                   <FaHistory className="text-blue-400" /> {month}
-                 </h3>
-               </div>
-               <div className="text-right">
-                  <div className="text-blue-500 text-xs font-bold uppercase">Total Collected</div>
-                  <div className="text-2xl font-bold text-blue-700">
-                    ${filteredHistory.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}
-                  </div>
-               </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">View Receipts</h1>
+                <p className="text-sm font-medium text-slate-500 mt-1">
+                  Financial records for <span className="font-bold text-slate-700">{student.firstName} {student.lastName}</span> (Adm No: {student.studentId})
+                </p>
+              </div>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button 
+                  onClick={() => setIsViewingReceipts(false)} 
+                  className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl flex items-center gap-2 hover:bg-slate-100 transition-colors shadow-sm"
+                >
+                  <FaArrowLeft /> Back
+                </button>
+              </div>
             </div>
 
-            <div className="flex justify-end mb-2">
-               <button 
-                  onClick={handlePrint}
-                  className="text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition"
-               >
-                  <FaPrint /> Print Official Receipt
-               </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto border border-slate-100 rounded-xl mb-4 relative">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold sticky top-0">
-                  <tr>
-                    <th className="p-3">Date</th>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Mode</th>
-                    <th className="p-3 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredHistory.length === 0 ? (
-                    <tr><td colSpan="4" className="p-10 text-center text-slate-400">No payment records found for {month}</td></tr>
-                  ) : (
-                    filteredHistory.map(rec => (
-                      <tr key={rec._id} className="hover:bg-slate-50">
-                        <td className="p-3 text-sm text-slate-600">{new Date(rec.date).toLocaleDateString()}</td>
-                        <td className="p-3 text-sm font-medium text-slate-800">{rec.feeType}</td>
-                        <td className="p-3 text-xs text-slate-400 uppercase tracking-wide">{rec.paymentMethod}</td>
-                        <td className="p-3 text-sm font-bold text-emerald-600 text-right">+${rec.amount}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Hidden Print Area */}
-            <div style={{ display: "none" }}>
-              <div ref={componentRef} className="p-10 font-serif text-slate-800">
-                <div className="text-center mb-8 border-b-2 border-slate-800 pb-4">
-                  <h1 className="text-3xl font-bold uppercase tracking-widest">School Name</h1>
-                  <p className="text-sm text-slate-500">Excellence in Education</p>
-                </div>
-                <div className="flex justify-between mb-8">
-                  <div className="space-y-1">
-                      <p className="text-sm text-slate-500 uppercase">Student Name</p>
-                      <p className="font-bold text-xl">{student.firstName} {student.lastName}</p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                      <p className="text-sm text-slate-500 uppercase">Receipt Details</p>
-                      <p className="font-bold">Month: {month}</p>
-                      <p className="text-sm">Class: {classDisplay}</p>
-                  </div>
-                </div>
-                <table className="w-full text-left border-collapse mb-8">
-                  <thead>
-                    <tr className="bg-slate-100 border-y border-slate-300">
-                      <th className="py-3 px-2 font-bold uppercase text-xs">Date</th>
-                      <th className="py-3 px-2 font-bold uppercase text-xs">Description</th>
-                      <th className="py-3 px-2 font-bold uppercase text-xs">Payment Mode</th>
-                      <th className="py-3 px-2 font-bold uppercase text-xs text-right">Amount</th>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="py-4 px-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Receipt No</th>
+                      <th className="py-4 px-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</th>
+                      <th className="py-4 px-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Month / Fee Type</th>
+                      <th className="py-4 px-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Amount</th>
+                      <th className="py-4 px-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filteredHistory.map(rec => (
-                      <tr key={rec._id} className="border-b border-slate-200">
-                        <td className="py-3 px-2 text-sm">{new Date(rec.date).toLocaleDateString()}</td>
-                        <td className="py-3 px-2 text-sm">{rec.feeType}</td>
-                        <td className="py-3 px-2 text-sm">{rec.paymentMethod}</td>
-                        <td className="py-3 px-2 text-right font-bold text-sm">${rec.amount}</td>
+                  <tbody className="divide-y divide-slate-100">
+                    {history.length > 0 ? history.map((txn, index) => {
+                      const displayMonth = txn.monthsPaid?.length > 0 ? txn.monthsPaid[0].split(' ')[0] : 'General';
+                      const displayYear = new Date(txn.date).getFullYear();
+                      
+                      return (
+                        <tr key={txn._id} className="hover:bg-slate-50 transition-colors group">
+                          <td className="py-5 px-6 font-black text-slate-800 tracking-tight">
+                            RE-{new Date(txn.date).getFullYear()}-{txn._id.slice(-4).toUpperCase()}
+                          </td>
+                          <td className="py-5 px-6 font-bold text-slate-600">
+                            {new Date(txn.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="py-5 px-6">
+                            <p className="font-bold text-slate-800">{displayMonth} {displayYear}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-0.5 truncate max-w-[200px]">{txn.monthsPaid?.join(' + ') || 'Fee Payment'}</p>
+                          </td>
+                          <td className="py-5 px-6 font-black text-slate-900">
+                            ₹ {txn.amount.toLocaleString()}
+                          </td>
+                          <td className="py-5 px-6 text-right">
+                            <button 
+                              onClick={() => triggerPrint(txn)}
+                              className="bg-orange-50 text-[#F05A28] border border-orange-100 hover:bg-orange-100 hover:border-orange-200 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ml-auto transition-all"
+                            >
+                              <FaPrint /> Print Receipt
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    }) : (
+                      <tr>
+                        <td colSpan="5" className="py-16 text-center">
+                           <FaFileDownload className="mx-auto text-slate-300 text-4xl mb-3" />
+                           <p className="text-slate-500 font-bold">No historical receipts found.</p>
+                        </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
-                <div className="flex justify-end">
-                    <div className="w-1/2 border-t border-slate-800 pt-2">
-                       <div className="flex justify-between text-xl font-bold">
-                         <span>Grand Total:</span>
-                         <span>${filteredHistory.reduce((acc, curr) => acc + curr.amount, 0)}</span>
-                       </div>
-                    </div>
-                </div>
-                <div className="mt-16 flex justify-between text-xs text-slate-400">
-                    <div className="pt-2 border-t w-32 text-center border-slate-400">Authorized Signatory</div>
-                    <div className="pt-2 border-t w-32 text-center border-slate-400">Parent Signature</div>
-                </div>
               </div>
             </div>
 
           </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+            <div className="w-full lg:w-2/3 p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Fee Collection Status</h2>
+              </div>
+
+              {activeInvoice && (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-[#F05A28] uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#F05A28]"></span> Current Action Required
+                  </p>
+                  
+                  <div className={`bg-white rounded-2xl border-l-4 ${activeInvoice.status === 'Partially Paid' ? 'border-orange-400' : 'border-rose-500'} p-6 shadow-sm flex flex-col gap-6`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-800">{activeInvoice.title}</h3>
+                        <p className="text-xs font-bold text-slate-400 mt-1">Main Tuition & Standard Charges</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${activeInvoice.status === 'Partially Paid' ? 'bg-orange-50 text-orange-600' : 'bg-rose-50 text-rose-600'}`}>
+                        {activeInvoice.status}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <div className="bg-slate-50 flex-1 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Due Amount</p>
+                        <p className="text-lg font-black text-slate-800 mt-1">₹{activeInvoice.amount.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-slate-50 flex-1 p-4 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount Paid</p>
+                        <p className="text-lg font-black text-emerald-600 mt-1">₹{activeInvoice.amountPaid.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-orange-50 flex-1 p-4 rounded-xl border border-orange-100">
+                        <p className="text-[10px] font-bold text-[#F05A28] uppercase tracking-widest">Balance</p>
+                        <p className="text-lg font-black text-[#F05A28] mt-1">₹{(activeInvoice.amount - activeInvoice.amountPaid).toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => toggleSelection(activeInvoice.title.replace(' Tuition', ''), feeStructure?.monthlyTuition || 0)}
+                        className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${selectedInvoices.includes(activeInvoice._id) ? 'bg-[#d94e20] text-white shadow-md' : 'bg-[#F05A28] text-white hover:bg-[#d94e20]'}`}
+                      >
+                        {selectedInvoices.includes(activeInvoice._id) ? 'Selected for Payment' : 'Pay This Balance'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Academic Year Breakdown</p>
+                  <button onClick={() => setIsViewingReceipts(true)} className="text-[10px] font-bold text-[#F05A28] hover:text-[#d94e20]">View All History</button>
+                </div>
+
+                {ACADEMIC_MONTHS.map((month) => {
+                  const inv = invoices.find(i => i.title.includes(month));
+                  const isPaid = inv?.status === 'Paid';
+                  const isOverdue = inv?.status !== 'Paid' && inv !== activeInvoice;
+                  const isSelected = inv && selectedInvoices.includes(inv._id);
+
+                  if (inv && inv === activeInvoice) return null;
+
+                  if (isPaid) {
+                    return (
+                      <div key={month} className="bg-white p-4 rounded-xl border-l-4 border-emerald-400 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center"><FaCheckCircle size={18} /></div>
+                          <div>
+                            <p className="font-bold text-slate-800">{month} Tuition</p>
+                            <p className="text-[10px] font-bold text-emerald-500 uppercase mt-0.5">Paid Successfully</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-slate-800">₹{inv.amount.toLocaleString()}</p>
+                          <p className="text-[10px] font-black text-emerald-500 tracking-widest uppercase mt-1">Cleared</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (inv && isOverdue) {
+                    return (
+                      <div key={month} className={`bg-white p-4 rounded-xl border-l-4 ${isSelected ? 'border-[#F05A28] shadow-md ring-2 ring-orange-100' : 'border-rose-400 shadow-sm'} flex items-center justify-between transition-all`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isSelected ? 'bg-orange-100 text-[#F05A28]' : 'bg-rose-50 text-rose-500'}`}>
+                            <FaExclamationTriangle size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{inv.title}</p>
+                            <p className="text-[10px] font-bold text-rose-500 uppercase mt-0.5">Balance Pending</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <p className="font-black text-rose-600">₹{(inv.amount - inv.amountPaid).toLocaleString()}</p>
+                            <p className="text-[10px] font-black text-rose-500 tracking-widest uppercase mt-1">Outstanding</p>
+                          </div>
+                          <button 
+                            onClick={() => toggleSelection(month, feeStructure?.monthlyTuition || 0)}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${isSelected ? 'bg-[#F05A28] text-white' : 'bg-orange-100 text-[#F05A28] hover:bg-orange-200'}`}
+                          >
+                            {isSelected ? 'Selected' : 'Pay Now'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={month} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between opacity-70 hover:opacity-100 transition-opacity">
+                      <div>
+                        <p className="font-bold text-slate-600">{month} 2026</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Estimated: ₹{(feeStructure?.monthlyTuition || 0).toLocaleString()}</p>
+                      </div>
+                      <button 
+                        onClick={() => toggleSelection(month, feeStructure?.monthlyTuition || 0)}
+                        className="px-3 py-1 bg-white border border-slate-200 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-md hover:border-blue-400 hover:text-blue-500 transition-colors"
+                      >
+                        Not Due (Generate)
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+
+            <div className="w-full lg:w-1/3 bg-slate-100 p-6 lg:p-8 overflow-y-auto border-l border-slate-200 custom-scrollbar flex flex-col gap-6">
+              
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h3 className="font-black text-slate-800 flex items-center gap-2 mb-6">
+                  <span className="w-4 h-4 rounded bg-[#F05A28]"></span> Overall Summary
+                </h3>
+
+                <div className="space-y-4 text-sm font-medium text-slate-600 border-b border-slate-100 pb-6 mb-6">
+                  <div className="flex justify-between">
+                    <span>Last Payment Date</span>
+                    <span className="font-bold text-slate-800">{history.length > 0 ? new Date(history[0].date).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Current Session Dues</span>
+                    <span className="font-bold text-slate-800">₹{totalBilled.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Total Payments Received</span>
+                    <span className="font-bold">-₹{totalPaid.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end mb-4">
+                  <p className="font-black text-slate-800 text-lg">Net Outstanding</p>
+                  <p className="font-black text-[#F05A28] text-2xl">₹{totalOutstanding.toLocaleString()}</p>
+                </div>
+
+                <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2">
+                  <div className="bg-[#F05A28] h-2.5 rounded-full" style={{ width: `${percentPaid}%` }}></div>
+                </div>
+                <p className="text-[9px] font-black text-slate-400 text-center uppercase tracking-widest mb-6">
+                  {percentPaid}% OF TOTAL ACADEMIC YEAR PAID
+                </p>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cart Total</span>
+                    <span className="font-black text-lg text-slate-800">₹{selectedTotal}</span>
+                  </div>
+                  
+                  <div className="relative mb-3">
+                    <input 
+                      type="number" value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)}
+                      placeholder="Enter amount to pay..."
+                      className="w-full bg-white border border-slate-300 rounded-lg py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#F05A28] focus:ring-1 focus:ring-[#F05A28] transition-all"
+                    />
+                    <button type="button" onClick={() => setAmountPaid(selectedTotal.toString())} className="absolute right-2 top-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded text-[10px] font-black uppercase">
+                      Max
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {['Cash', 'Online', 'Cheque'].map(mode => (
+                      <button 
+                        key={mode} type="button" onClick={() => setPaymentMethod(mode)}
+                        className={`py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${paymentMethod === mode ? 'bg-orange-100 border-[#F05A28] text-[#F05A28]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400'}`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={handleCheckout} disabled={processing || selectedInvoices.length === 0}
+                    className="w-full bg-[#F05A28] hover:bg-[#d94e20] disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-bold text-sm shadow-md shadow-orange-500/30 transition-all"
+                  >
+                    {processing ? 'Processing...' : 'Settle Selected Dues Now'}
+                  </button>
+                </div>
+
+                <button 
+                  onClick={() => setIsViewingReceipts(true)} 
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                >
+                  <FaFileDownload /> View Receipts
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ HIDDEN RECEIPT DESIGN (FIXED FOR V3) */}
+        <div className="absolute left-[-9999px] top-[-9999px] overflow-hidden opacity-0 pointer-events-none">
+           <div ref={componentRef} className="p-12 bg-white text-slate-900 font-sans relative" style={{ width: '800px', minHeight: '1000px', margin: '0 auto' }}>
+              
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.03]">
+                <span className="text-[180px] font-black tracking-widest transform -rotate-45">PAID</span>
+              </div>
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-12 border-b border-slate-100 pb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center border border-orange-200 shrink-0">
+                      <span className="text-orange-600 font-black text-2xl">RS</span>
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-black text-slate-800 tracking-tight">Radhe Shyam School</h1>
+                      <p className="text-xs text-slate-500 mt-1">123 Education Lane, Academic District</p>
+                      <p className="text-xs text-slate-500">Contact: +91 80 1234 5678 | finance@radheshyam.edu</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col items-end">
+                    <span className="bg-orange-50 text-[#F05A28] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border border-orange-100">
+                      Official Payment Receipt
+                    </span>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Receipt Number</p>
+                    <p className="text-lg font-black text-slate-800 mb-3">
+                      {activePrintTxn ? `RE-${new Date(activePrintTxn.date).getFullYear()}-${activePrintTxn._id.slice(-4).toUpperCase()}` : 'N/A'}
+                    </p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Issue Date</p>
+                    <p className="text-sm font-bold text-slate-800">
+                      {activePrintTxn ? new Date(activePrintTxn.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 mb-12">
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-slate-200 flex items-center justify-center text-[8px]">👤</span> Student Information
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Name</span>
+                        <span className="font-bold text-slate-800">{student.firstName} {student.lastName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Student ID</span>
+                        <span className="font-bold text-slate-800">{student.studentId}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Grade</span>
+                        <span className="font-bold text-slate-800">{student.class?.grade || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-slate-200 flex items-center justify-center text-[8px]">💳</span> Payment Information
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Method</span>
+                        <span className="font-bold text-slate-800">{activePrintTxn?.paymentMethod || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Transaction ID</span>
+                        <span className="font-bold text-slate-800">{activePrintTxn?._id?.slice(0,9).toUpperCase() || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-slate-500 font-medium">Status</span>
+                        <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-emerald-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Paid Successfully
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-3 mb-4 px-2">
+                    <span>Description</span>
+                    <span>Amount (INR)</span>
+                  </div>
+                  <div className="space-y-4 px-2">
+                    {activePrintTxn?.monthsPaid?.map((title, i) => (
+                      <div key={i} className="flex justify-between items-start pb-4 border-b border-slate-50">
+                        <div>
+                          <p className="font-black text-slate-800 text-sm">{title}</p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1">Academic Session 2026-27</p>
+                        </div>
+                        <p className="font-black text-slate-800">₹{activePrintTxn.amount.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end mb-16 mt-8">
+                  <div className="w-80">
+                    <div className="flex justify-between text-sm mb-3 px-2">
+                      <span className="text-slate-500 font-medium">Subtotal</span>
+                      <span className="font-bold text-slate-800">₹{activePrintTxn?.amount.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-6 px-2">
+                      <span className="text-slate-500 font-medium">Tax / Convenience Fee</span>
+                      <span className="font-bold text-slate-800">₹0.00</span>
+                    </div>
+                    <div className="bg-[#F05A28] text-white p-5 rounded-2xl flex justify-between items-center shadow-lg shadow-orange-500/20">
+                      <span className="font-bold text-sm">Total Amount Paid</span>
+                      <span className="font-black text-2xl tracking-tight">₹{activePrintTxn?.amount.toLocaleString() || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end mt-32 pt-8">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-16 h-16 border border-slate-200 rounded-xl flex flex-col items-center justify-center bg-slate-50 gap-0.5 p-2">
+                      <div className="flex gap-0.5"><div className="w-3 h-3 bg-slate-300"></div><div className="w-3 h-3 bg-slate-300"></div></div>
+                      <div className="flex gap-0.5"><div className="w-3 h-3 bg-slate-300"></div><div className="w-3 h-3 bg-slate-300"></div></div>
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-medium w-48 leading-relaxed italic">
+                      Scan the QR code to verify this digital receipt online at radheshyam.edu/verify
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-48 border-b border-slate-400 mb-2"></div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Authorized Signatory</p>
+                  </div>
+                </div>
+
+              </div>
+           </div>
         </div>
+
       </div>
     </div>
   );

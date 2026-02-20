@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaChalkboardTeacher, FaUserGraduate, FaClipboardList,
-  FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes
+  FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes,
+  FaWallet // ✅ Imported the Wallet icon for Finance
 } from 'react-icons/fa';
 import { FaMoneyBillWave } from 'react-icons/fa';
-import { FaLayerGroup } from 'react-icons/fa'; // Import the icon
+import { FaLayerGroup } from 'react-icons/fa'; 
+
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -119,16 +121,31 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               </div>
             )}
           </div>
+
           <Link
             to="/admin/fees"
-            className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-slate-300 hover:text-white"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/fees')
+              ? 'bg-slate-700 text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
           >
             <FaMoneyBillWave />
-            <span className="font-semibold">Fees</span>
+            <span className="font-semibold">Fee Structures</span>
           </Link>
           
-
-
+          {/* ✅ NEW FINANCE DASHBOARD LINK */}
+          <Link
+            to="/admin/finance"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/finance')
+              ? 'bg-emerald-600 text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaWallet />
+            <span className="font-semibold">Finance & Fees</span>
+          </Link>
 
           <Link
             to="/admin/teachers"

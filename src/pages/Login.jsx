@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
-import { FaEnvelope, FaLock, FaUniversity, FaArrowLeft } from 'react-icons/fa';
+import { 
+  FaEnvelope, FaLock, FaUniversity, FaArrowLeft, 
+  FaUserShield, FaChalkboardTeacher 
+} from 'react-icons/fa'; // ✅ Added Icons
 import 'react-toastify/dist/ReactToastify.css';
 import { io } from 'socket.io-client'; 
 
@@ -16,6 +19,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false); 
+  
+  // ✅ NEW: Role Selection State (Default: 'admin')
+  const [loginRole, setLoginRole] = useState('admin'); 
 
   const navigate = useNavigate();
   const BASE_URL = import.meta.env.VITE_API_URL;
@@ -40,25 +46,42 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(`${BASE_URL}/api/auth/login`, {
+      // ✅ Dynamic Endpoint based on Role
+      const endpoint = loginRole === 'admin' 
+        ? `${BASE_URL}/api/auth/login` 
+        : `${BASE_URL}/api/teachers/login`;
+
+      const response = await axios.post(endpoint, {
         email: formData.email,
         password: formData.password
       });
 
-      // --- INTEGRATION START: Data Saving ---
-      const userData = response.data.user || response.data;
-      const userRole = response.data.role || userData.role;
-
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(userData)); 
-      localStorage.setItem("role", userRole.toLowerCase()); // role lowercase mein save karna consistent rehta hai
+      const data = response.data;
       
-      // Agar teacher hai toh uska Particular Profile ID save karein
-      if (userData.teacherProfile) {
-        localStorage.setItem("teacherId", userData.teacherProfile);
-      }
-      // --- INTEGRATION END ---
+      // ✅ Handle Data differences between Admin & Teacher APIs
+      let token, userData, userRole;
 
+      if (loginRole === 'admin') {
+         token = data.token;
+         userData = data.user || data;
+         userRole = data.role || userData.role;
+      } else {
+         // Teacher API returns flat structure
+         token = data.token;
+         userData = { 
+            name: data.name, 
+            email: data.email, 
+            _id: data.teacherId, 
+            role: 'teacher' 
+         };
+         userRole = 'teacher';
+         localStorage.setItem("teacherId", data.teacherId); // Save ID for Teacher Dashboard
+      }
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userData)); 
+      localStorage.setItem("role", userRole.toLowerCase()); 
+      
       toast.success(`Welcome back, ${userData.name || 'User'}!`);
 
       // Role-Based Redirection
@@ -119,7 +142,24 @@ const Login = () => {
             {!isForgotPassword ? (
                 <>
                     <h2 className="text-3xl font-bold text-slate-800 mb-1">Welcome Back</h2>
-                    <p className="text-slate-500 mb-8">Please sign in to your account.</p>
+                    <p className="text-slate-500 mb-6">Please sign in to your account.</p>
+                    
+                    {/* ✅ NEW: Role Toggle Buttons */}
+                    <div className="bg-slate-100 p-1.5 rounded-xl flex mb-6">
+                        <button 
+                            onClick={() => setLoginRole('admin')}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${loginRole === 'admin' ? 'bg-[rgba(195,32,41)] text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <FaUserShield /> Admin / Student
+                        </button>
+                        <button 
+                            onClick={() => setLoginRole('teacher')}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${loginRole === 'teacher' ? 'bg-[rgba(195,32,41)] text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <FaChalkboardTeacher /> Teacher
+                        </button>
+                    </div>
+
                     <form onSubmit={handleLoginSubmit} className="space-y-6">
                         <div className="relative">
                             <FaEnvelope className="absolute left-3 top-3.5 text-slate-400" />
@@ -135,7 +175,7 @@ const Login = () => {
                             </button>
                         </div>
                         <button disabled={loading} className="w-full text-white py-3 rounded-lg font-bold shadow-lg transition-all flex justify-center items-center gap-2 bg-[rgba(195,32,41)] hover:bg-[rgba(175,28,37)] shadow-[rgba(195,32,41)]/40" >
-                            {loading ? 'Authenticating...' : 'Sign In'}
+                            {loading ? 'Authenticating...' : `Sign In as ${loginRole === 'admin' ? 'Admin' : 'Teacher'}`}
                         </button>
                     </form>
                 </>

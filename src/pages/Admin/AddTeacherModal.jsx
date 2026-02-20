@@ -3,13 +3,13 @@ import axios from 'axios';
 import { 
   FaTimes, FaArrowRight, FaCheck, FaUser, 
   FaGraduationCap, FaFileAlt, FaLock, FaUpload, 
-  FaMagic, FaEye, FaEyeSlash // ✅ NEW ICONS ADDED
+  FaMagic, FaEye, FaEyeSlash 
 } from 'react-icons/fa';
 
 const INITIAL_DATA = {
   fullName: '', gender: '', dob: '', email: '', permanentAddress: '', aadhaarNumber: '', bloodGroup: '',
   highestQualification: '', university: '', specialization: '', remarks: '', extraDuties: 'No',
-  username: '', password: '', role: 'Teacher', status: 'Active', phone: ''
+  password: '', role: 'Teacher', status: 'Active', phone: '' 
 };
 
 const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
@@ -17,7 +17,6 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
   const [formData, setFormData] = useState(INITIAL_DATA);
   const [files, setFiles] = useState({ photo: null, resume: null, idProof: null });
   
-  // ✅ NEW: State to toggle password visibility
   const [showPassword, setShowPassword] = useState(false);
 
   const photoInputRef = useRef(null);  
@@ -33,7 +32,6 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
     setFiles({ photo: null, resume: null, idProof: null });
   }, [teacherToEdit, isOpen]);
 
-  // ✅ NEW: Auto Generate Password Function
   const generatePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#";
     let pass = "";
@@ -41,7 +39,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
       pass += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setFormData(prev => ({ ...prev, password: pass }));
-    setShowPassword(true); // Generate karte hi password dikha do
+    setShowPassword(true); 
   };
 
   const handleChange = (e) => {
@@ -160,26 +158,43 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                             <input name="phone" value={formData.phone} onChange={handleChange} type="text" placeholder="+91..." className="form-input-style w-full" />
                         </div>
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email</label>
-                        <input name="email" value={formData.email} onChange={handleChange} type="email" placeholder="email@school.com" className="form-input-style w-full" required />
-                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end pt-4"><button type="button" onClick={nextStep} className="next-btn w-full sm:w-auto">Next Step <FaArrowRight /></button></div>
               </div>
             )}
 
-            {/* STEP 2: Qualifications */}
+            {/* STEP 2: Qualifications (✅ UPDATED) */}
             {step === 2 && (
               <div className="space-y-6 animate-slide-up">
                 <h3 className="text-orange-600 font-bold flex items-center gap-2"><FaGraduationCap /> Qualification Details</h3>
                 <div className="space-y-4">
+                  
+                  {/* Qualification Dropdown */}
                   <select name="highestQualification" value={formData.highestQualification} onChange={handleChange} className="form-input-style w-full appearance-none">
-                    <option value="">Select Highest Qualification</option><option value="B.Ed">B.Ed</option><option value="M.Ed">M.Ed</option><option value="PhD">PhD</option>
+                    <option value="">Select Highest Qualification</option>
+                    <option value="B.Ed">B.Ed</option><option value="M.Ed">M.Ed</option><option value="PhD">PhD</option>
+                    <option value="M.Sc">M.Sc</option><option value="M.A">M.A</option><option value="B.Tech">B.Tech</option>
                   </select>
+
+                  {/* University */}
                   <input name="university" value={formData.university} onChange={handleChange} placeholder="University / College Name" className="form-input-style w-full" />
-                  <input name="specialization" value={formData.specialization} onChange={handleChange} placeholder="Specialization (e.g. Math, Science)" className="form-input-style w-full" />
+                  
+                  {/* ✅ SPECIALIZATION TEXT INPUT (Simple Info) */}
+                  <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Specialization (Major Subject)</label>
+                      <input 
+                        name="specialization" 
+                        value={formData.specialization} 
+                        onChange={handleChange} 
+                        placeholder="e.g. Mathematics, Physics, English Literature" 
+                        className="form-input-style w-full" 
+                      />
+                      <p className="text-[10px] text-slate-400 ml-1 italic">
+                         * Teacher's academic major (not necessarily the subject they will teach).
+                      </p>
+                  </div>
+
                   <textarea name="remarks" value={formData.remarks} onChange={handleChange} placeholder="Any additional remarks..." className="form-input-style w-full h-24 resize-none" />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 justify-between pt-4">
@@ -211,12 +226,12 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                   
                   <div className="space-y-4 lg:pl-10 lg:border-l border-slate-100">
                       <h3 className="text-blue-600 font-bold flex items-center gap-2"><FaLock /> System Access</h3>
+                      
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Username</label>
-                        <input name="username" value={formData.username} onChange={handleChange} placeholder="johndoe123" className="form-input-style w-full" />
+                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email ID (Login Username)</label>
+                        <input name="email" value={formData.email} onChange={handleChange} type="email" placeholder="teacher@school.com" className="form-input-style w-full" required />
                       </div>
                       
-                      {/* ✅ UPDATED: Password Field with Generate Button */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Password</label>
                         <div className="flex gap-2 relative">
@@ -224,18 +239,16 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                                 name="password" 
                                 value={formData.password} 
                                 onChange={handleChange} 
-                                type={showPassword ? "text" : "password"} // 👀 Toggle Type
+                                type={showPassword ? "text" : "password"} 
                                 placeholder="••••••••" 
                                 className="form-input-style w-full pr-10" 
                             />
                             
-                            {/* Eye Icon */}
                             <button type="button" onClick={() => setShowPassword(!showPassword)} 
                                 className="absolute right-14 top-3 text-slate-400 hover:text-blue-600">
                                 {showPassword ? <FaEyeSlash/> : <FaEye/>}
                             </button>
 
-                            {/* Magic Button */}
                             <button 
                                 type="button" 
                                 onClick={generatePassword} 
