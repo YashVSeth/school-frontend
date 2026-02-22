@@ -75,13 +75,23 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
     try {
       const BASE_URL = import.meta.env.VITE_API_URL;
       if (teacherToEdit) {
+        // ✅ ADDED MULTIPART HEADER HERE FOR EDITING
         await axios.put(`${BASE_URL}/api/teachers/${teacherToEdit._id}`, dataToSend, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data' 
+          }
         });
+        alert("Teacher updated successfully!");
       } else {
+        // ✅ ADDED MULTIPART HEADER HERE FOR ADDING
         await axios.post(`${BASE_URL}/api/teachers`, dataToSend, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
         });
+        alert("Teacher added successfully!");
       }
       onRefresh();
       onClose();
@@ -122,7 +132,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                       {files.photo ? (
                         <img src={URL.createObjectURL(files.photo)} alt="Preview" className="w-full h-full object-cover" />
                       ) : teacherToEdit?.photoUrl ? (
-                        <img src={`${import.meta.env.VITE_API_URL}/${teacherToEdit.photoUrl.replace(/\\/g, "/")}`} alt="Current" className="w-full h-full object-cover" />
+                        <img src={teacherToEdit.photoUrl} alt="Current" className="w-full h-full object-cover" />
                       ) : (
                         <FaUser size={40} />
                       )}
@@ -164,7 +174,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
               </div>
             )}
 
-            {/* STEP 2: Qualifications (✅ UPDATED) */}
+            {/* STEP 2: Qualifications */}
             {step === 2 && (
               <div className="space-y-6 animate-slide-up">
                 <h3 className="text-orange-600 font-bold flex items-center gap-2"><FaGraduationCap /> Qualification Details</h3>
@@ -180,7 +190,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                   {/* University */}
                   <input name="university" value={formData.university} onChange={handleChange} placeholder="University / College Name" className="form-input-style w-full" />
                   
-                  {/* ✅ SPECIALIZATION TEXT INPUT (Simple Info) */}
+                  {/* Specialization */}
                   <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Specialization (Major Subject)</label>
                       <input 
@@ -191,7 +201,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                         className="form-input-style w-full" 
                       />
                       <p className="text-[10px] text-slate-400 ml-1 italic">
-                         * Teacher's academic major (not necessarily the subject they will teach).
+                          * Teacher's academic major (not necessarily the subject they will teach).
                       </p>
                   </div>
 
