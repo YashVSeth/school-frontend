@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// ✅ CORRECTED: Changed 'next' to 'react'
+import { Analytics } from "@vercel/analytics/react";
+
 // --- PAGES IMPORTS ---
 import Login from './pages/Login';
 import ResetPassword from "./pages/Admin/ResetPassword"; 
@@ -20,7 +23,7 @@ import FeeStructure from './pages/Admin/FeeStructure';
 
 // Teacher Pages
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
-import TeacherAttendance from './pages/Teacher/TeacherAttendance'; // ✅ Sirf ye ek import rahega
+import TeacherAttendance from './pages/Teacher/TeacherAttendance'; 
 
 // --- PROTECTED ROUTE COMPONENT ---
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -43,52 +46,56 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
   return (
-    <Router>
-      <ToastContainer position="top-right" autoClose={3000} />
-      <Routes>
-        {/* --- Public Routes --- */}
-        <Route path="/" element={<Login />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+    <>
+      <Router>
+        <ToastContainer position="top-right" autoClose={3000} />
+        <Routes>
+          {/* --- Public Routes --- */}
+          <Route path="/" element={<Login />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* --- ADMIN ROUTES --- */}
-        <Route path="/admin/*" element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <Routes>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="classes" element={<Classes />} />
-              <Route path="students/add" element={<AddStudent />} />
-              <Route path="students/list" element={<StudentList />} />
-              <Route path="attendance" element={<AttendanceAdmin />} />
-              <Route path="fees" element={<Fees />} />
-              <Route path="finance" element={<FinanceDashboard />} />
-              <Route path="teachers" element={<Teachers />} />
-              <Route path="fee-structure" element={<FeeStructure />} />
-              <Route path="*" element={<Navigate to="dashboard" replace />} />
-            </Routes>
-          </ProtectedRoute>
-        } />
+          {/* --- ADMIN ROUTES --- */}
+          <Route path="/admin/*" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Routes>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="classes" element={<Classes />} />
+                <Route path="students/add" element={<AddStudent />} />
+                <Route path="students/list" element={<StudentList />} />
+                <Route path="attendance" element={<AttendanceAdmin />} />
+                <Route path="fees" element={<Fees />} />
+                <Route path="finance" element={<FinanceDashboard />} />
+                <Route path="teachers" element={<Teachers />} />
+                <Route path="fee-structure" element={<FeeStructure />} />
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
 
-        {/* --- TEACHER ROUTES --- */}
-        <Route path="/teacher/*" element={
-          <ProtectedRoute allowedRoles={['teacher']}>
-            <Routes>
-              {/* Dashboard */}
-              <Route path="dashboard" element={<TeacherDashboard />} />
-              
-              {/* ✅ Attendance Page (Sahi Route) */}
-              {/* Note: Parent /teacher/* hai, isliye yahan sirf "attendance" likhenge */}
-              <Route path="attendance" element={<TeacherAttendance />} />
-              
-              <Route path="*" element={<Navigate to="dashboard" replace />} />
-            </Routes>
-          </ProtectedRoute>
-        } />
+          {/* --- TEACHER ROUTES --- */}
+          <Route path="/teacher/*" element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <Routes>
+                {/* Dashboard */}
+                <Route path="dashboard" element={<TeacherDashboard />} />
+                
+                {/* Attendance Page */}
+                <Route path="attendance" element={<TeacherAttendance />} />
+                
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
 
-        {/* --- Fallbacks --- */}
-        <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+          {/* --- Fallbacks --- */}
+          <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+      
+      {/* ✅ ADDED: This makes Vercel Analytics actually run! */}
+      <Analytics />
+    </>
   );
 }
 
