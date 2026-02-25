@@ -101,7 +101,7 @@ const TeacherAttendance = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Mark Attendance</h1>
           <p className="text-slate-500">
-             Class: <span className="font-bold text-indigo-600">{classInfo?.className}</span> | 
+             Class: <span className="font-bold text-orange-600">{classInfo?.className}</span> | 
              Total Students: {students.length}
           </p>
         </div>
@@ -112,7 +112,7 @@ const TeacherAttendance = () => {
                 type="date" 
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="border rounded p-1 text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                className="border rounded p-1 text-slate-700 outline-none focus:ring-2 focus:ring-orange-500"
             />
         </div>
       </div>
@@ -121,7 +121,7 @@ const TeacherAttendance = () => {
       <div className="flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
          <button 
             onClick={handleMarkAllPresent}
-            className="flex items-center gap-2 text-indigo-600 font-bold hover:bg-indigo-50 px-4 py-2 rounded-lg transition"
+            className="flex items-center gap-2 text-orange-600 font-bold hover:bg-orange-50 px-4 py-2 rounded-lg transition"
          >
             <FaCheckDouble /> Mark All Present
          </button>
@@ -195,7 +195,7 @@ const TeacherAttendance = () => {
       <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-auto">
         <button 
             onClick={handleSubmit}
-            className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-bold py-3 px-8 rounded-full shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95"
+            className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-lg font-bold py-3 px-8 rounded-full shadow-2xl flex items-center justify-center gap-3 transition-transform active:scale-95"
         >
             <FaSave /> Save Attendance
         </button>

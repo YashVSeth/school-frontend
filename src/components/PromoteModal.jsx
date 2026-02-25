@@ -118,11 +118,11 @@ const PromoteClassModal = ({ isOpen, onClose, classes, refreshData, defaultClass
             </div>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-xl flex gap-3 items-start">
-             <div className="bg-blue-100 p-2 rounded-full text-blue-600"><FaExchangeAlt /></div>
+          <div className="bg-red-50 p-4 rounded-xl flex gap-3 items-start">
+             <div className="bg-red-100 p-2 rounded-full text-red-600"><FaExchangeAlt /></div>
              <div>
-                <h4 className="font-bold text-blue-900 text-sm">What happens next?</h4>
-                <p className="text-xs text-blue-700 mt-1">All active students in the "From" class will be instantly updated to the "To" class. Their ID cards and records will reflect the new class immediately.</p>
+                <h4 className="font-bold text-red-900 text-sm">What happens next?</h4>
+                <p className="text-xs text-red-700 mt-1">All active students in the "From" class will be instantly updated to the "To" class. Their ID cards and records will reflect the new class immediately.</p>
              </div>
           </div>
 

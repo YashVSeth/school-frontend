@@ -77,7 +77,7 @@ const TeacherDashboard = () => {
     <div className="p-4 md:p-8 bg-slate-50 min-h-screen font-sans animate-fade-in">
       
       {/* 🌟 Header Section */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-6 md:p-8 rounded-3xl text-white shadow-xl mb-8 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
+      <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-6 md:p-8 rounded-3xl text-white shadow-xl mb-8 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
 
         <div className="z-10 w-full md:w-auto">
@@ -116,7 +116,7 @@ const TeacherDashboard = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-lg transition-all">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Students</h3>
-            <div className="bg-blue-50 text-blue-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><FaUsers size={20}/></div>
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><FaUsers size={20}/></div>
           </div>
           <p className="text-4xl font-extrabold text-slate-800">{loading ? "..." : stats.studentCount}</p>
           <p className="text-xs text-slate-400 mt-2 font-medium">Registered in DB</p>
@@ -126,9 +126,9 @@ const TeacherDashboard = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-lg transition-all">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Avg. Attendance</h3>
-            <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><FaChartBar size={20}/></div>
+            <div className="bg-amber-50 text-amber-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><FaChartBar size={20}/></div>
           </div>
-          <p className="text-4xl font-extrabold text-emerald-500">{loading ? "..." : stats.presence}%</p>
+          <p className="text-4xl font-extrabold text-amber-500">{loading ? "..." : stats.presence}%</p>
           <p className="text-xs text-slate-400 mt-2 font-medium">Last 7 Days Average</p>
         </div>
 
@@ -136,9 +136,9 @@ const TeacherDashboard = () => {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center gap-3">
             <div className="flex justify-between items-center">
                 <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Quick Actions</h3>
-                <button onClick={fetchDashboardData} className="text-slate-400 hover:text-indigo-600 transition"><FaSync/></button>
+                <button onClick={fetchDashboardData} className="text-slate-400 hover:text-orange-600 transition"><FaSync/></button>
             </div>
-          <button onClick={() => navigate('/teacher/attendance')} className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-indigo-200 shadow-lg">
+          <button onClick={() => navigate('/teacher/attendance')} className="w-full bg-orange-600 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-orange-700 transition flex items-center justify-center gap-2 shadow-orange-200 shadow-lg">
             <FaUserCheck /> Mark Attendance
           </button>
           <button onClick={() => navigate('/teacher/students')} className="w-full bg-slate-100 text-slate-700 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-200 transition border border-slate-200">
@@ -150,25 +150,25 @@ const TeacherDashboard = () => {
       {/* ✅ NEW SECTION: My Teaching Schedule */}
       <div className="mb-8">
         <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2 text-lg">
-            <FaChalkboardTeacher className="text-blue-600"/> My Teaching Schedule
+            <FaChalkboardTeacher className="text-red-600"/> My Teaching Schedule
         </h3>
         {schedule.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {schedule.map((cls) => (
                     <div key={cls._id} className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                        <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
                         <div className="flex justify-between items-start mb-3">
                             <h4 className="text-xl font-bold text-slate-800">
                                 Class {cls.grade} - {cls.section}
                             </h4>
-                            <span className="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded border border-blue-100">
+                            <span className="bg-red-50 text-red-600 text-xs font-bold px-2 py-1 rounded border border-red-100">
                                 {cls.subjects.length} Subjects
                             </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {cls.subjects.map((sub, idx) => (
                                 <span key={idx} className="text-xs font-bold bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-100 flex items-center gap-1.5">
-                                    <FaBookOpen size={10} className="text-blue-400"/> {sub}
+                                    <FaBookOpen size={10} className="text-red-400"/> {sub}
                                 </span>
                             ))}
                         </div>

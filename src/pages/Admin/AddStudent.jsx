@@ -12,12 +12,12 @@ import {
 const InputField = ({ label, name, type = "text", value, onChange, placeholder, required = false, icon }) => (
   <div className="space-y-1.5">
     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-      {icon && <span className="text-blue-500">{icon}</span>} {label} {required && <span className="text-red-500">*</span>}
+      {icon && <span className="text-red-500">{icon}</span>} {label} {required && <span className="text-red-500">*</span>}
     </label>
     <input 
       type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} required={required}
       autoComplete="off"
-      className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block p-3 transition-all outline-none shadow-sm"
+      className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-red-500 block p-3 transition-all outline-none shadow-sm"
     />
   </div>
 );
@@ -122,9 +122,9 @@ const AddStudent = () => {
     <Layout>
       <div className="max-w-6xl mx-auto animate-fade-in-up pb-10">
         <ToastContainer position="top-right" autoClose={3000} theme="colored" /> 
-        <div className="bg-gradient-to-r from-blue-800 to-blue-600 rounded-2xl p-8 mb-8 text-white shadow-xl flex items-center justify-between">
+        <div className="bg-gradient-to-r from-red-800 to-red-600 rounded-2xl p-8 mb-8 text-white shadow-xl flex items-center justify-between">
            <div> <h1 className="text-3xl font-bold tracking-tight">Student Admission</h1> 
-           <p className="text-blue-100 mt-2 opacity-90">Register new profile for the current session.</p> </div> 
+           <p className="text-red-100 mt-2 opacity-90">Register new profile for the current session.</p> </div> 
            <FaUserGraduate size={40} className="opacity-20 hidden md:block" /> 
            </div>
 
@@ -160,7 +160,7 @@ const AddStudent = () => {
                <div className="grid grid-cols-2 gap-4">
                   <InputField label="Date of Birth" name="dob" type="date" value={formData.dob} onChange={handleChange} />
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><FaVenusMars className="text-blue-500"/> Gender</label>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><FaVenusMars className="text-red-500"/> Gender</label>
                     <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none">
                       <option value="">Select</option>
                       <option value="Male">Male</option>
@@ -188,15 +188,15 @@ const AddStudent = () => {
                </label>
 
                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" name="isUsingTransport" checked={formData.isUsingTransport} onChange={handleChange} className="w-6 h-6 rounded-lg accent-blue-600 cursor-pointer" />
-                  <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><FaBus className="text-blue-500 text-lg"/> Student uses School Transport</span>
+                  <input type="checkbox" name="isUsingTransport" checked={formData.isUsingTransport} onChange={handleChange} className="w-6 h-6 rounded-lg accent-red-600 cursor-pointer" />
+                  <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><FaBus className="text-red-500 text-lg"/> Student uses School Transport</span>
                </label>
             </div>
           </div>
 
           <button 
             type="submit" disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-100 disabled:opacity-50"
+            className="w-full bg-red-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-red-700 transition-all active:scale-[0.98] shadow-lg shadow-red-100 disabled:opacity-50"
           >
             {loading ? "SAVING TO DATABASE..." : "COMPLETE ADMISSION"}
           </button>

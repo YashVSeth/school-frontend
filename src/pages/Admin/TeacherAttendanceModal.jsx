@@ -72,7 +72,7 @@ const TeacherAttendanceModal = ({ isOpen, onClose, teacher }) => {
         <div className="bg-slate-800 text-white p-6 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaClock className="text-emerald-400" /> Attendance Record
+              <FaClock className="text-amber-400" /> Attendance Record
             </h2>
             <p className="text-slate-300 text-sm">{teacher.name} ({teacher.email})</p>
           </div>
@@ -88,7 +88,7 @@ const TeacherAttendanceModal = ({ isOpen, onClose, teacher }) => {
             type="month" 
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="border border-slate-300 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"
+            className="border border-slate-300 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:border-red-500"
           />
         </div>
 
@@ -114,7 +114,7 @@ const TeacherAttendanceModal = ({ isOpen, onClose, teacher }) => {
                         {dateString}
                       </div>
                       <span className={`text-sm font-bold 
-                        ${status === 'Present' ? 'text-emerald-600' : 
+                        ${status === 'Present' ? 'text-amber-600' : 
                           status === 'Absent' ? 'text-red-600' : 'text-slate-400'}`}>
                         {status}
                       </span>
@@ -124,7 +124,7 @@ const TeacherAttendanceModal = ({ isOpen, onClose, teacher }) => {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => handleStatusUpdate(dateString, 'Present')}
-                        className={`p-1.5 rounded-full transition ${status === 'Present' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-300 hover:bg-emerald-100 hover:text-emerald-500'}`}
+                        className={`p-1.5 rounded-full transition ${status === 'Present' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-300 hover:bg-amber-100 hover:text-amber-500'}`}
                         title="Mark Present"
                       >
                         <FaCheckCircle />

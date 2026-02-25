@@ -48,7 +48,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         {/* 🔹 LOGO AREA */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg shadow-lg">
+            <div className="bg-red-600 p-2 rounded-lg shadow-lg">
               <FaUniversity className="text-xl text-white" />
             </div>
             <div>
@@ -70,7 +70,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             to="/admin/dashboard"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/dashboard')
-              ? 'bg-blue-600 text-white shadow-lg'
+              ? 'bg-red-600 text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
@@ -81,7 +81,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             to="/admin/classes"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/classes')
-              ? 'bg-purple-600 text-white shadow-lg'
+              ? 'bg-orange-600 text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
@@ -96,7 +96,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 }`}
             >
               <div className="flex items-center gap-3">
-                <FaUserGraduate className={isStudentSection ? 'text-blue-400' : ''} />
+                <FaUserGraduate className={isStudentSection ? 'text-red-400' : ''} />
                 <span className="font-medium">Students</span>
               </div>
               {showStudentMenu || isStudentSection ? <FaChevronDown className="text-xs" /> : <FaChevronRight className="text-xs" />}
@@ -107,14 +107,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 <Link
                   to="/admin/students/add"
                   onClick={handleLinkClick}
-                  className={`block p-2 text-sm rounded ${isActive('/admin/students/add') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/students/add') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
                 >
                   Add Student
                 </Link>
                 <Link
                   to="/admin/students/list"
                   onClick={handleLinkClick}
-                  className={`block p-2 text-sm rounded ${isActive('/admin/students/list') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/students/list') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
                 >
                   Class List
                 </Link>
@@ -139,7 +139,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             to="/admin/finance"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/finance')
-              ? 'bg-emerald-600 text-white shadow-lg'
+              ? 'bg-amber-600 text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >

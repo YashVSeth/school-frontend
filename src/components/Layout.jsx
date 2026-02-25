@@ -21,7 +21,7 @@ const Layout = ({ children }) => {
         {/* Mobile Header (Only visible on small screens) */}
         <header className="lg:hidden bg-white border-b p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={toggleSidebar} className="text-slate-600 hover:text-blue-600 p-2 rounded-lg hover:bg-slate-100 transition">
+            <button onClick={toggleSidebar} className="text-slate-600 hover:text-red-600 p-2 rounded-lg hover:bg-slate-100 transition">
               <FaBars size={24} />
             </button>
             <span className="font-bold text-lg text-slate-800">Radhey Shyam Shakuntala Seth Shikshan Sansthaan </span>

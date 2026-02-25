@@ -148,12 +148,12 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
         <div className="p-6 space-y-8 overflow-y-auto custom-scrollbar">
           
           {/* ✅ SECTION 1: ASSIGN CLASS TEACHER */}
-          <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-100">
-             <h3 className="text-sm font-bold text-indigo-800 mb-3 uppercase tracking-wide flex items-center gap-2">
+          <div className="bg-orange-50 p-5 rounded-xl border border-orange-100">
+             <h3 className="text-sm font-bold text-orange-800 mb-3 uppercase tracking-wide flex items-center gap-2">
                 <FaUserTie /> Assign Class Teacher
              </h3>
              <select 
-                className="w-full p-3 rounded-lg border border-indigo-200 bg-white font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full p-3 rounded-lg border border-orange-200 bg-white font-medium text-slate-700 focus:ring-2 focus:ring-orange-500 outline-none"
                 value={assignedClassTeacher}
                 onChange={(e) => setAssignedClassTeacher(e.target.value)}
              >
@@ -169,13 +169,13 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
           {/* SECTION 2: SUBJECTS & TEACHERS */}
           <div>
               {/* Add Subject */}
-              <div className="bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-sm mb-6">
-                <h3 className="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wide flex items-center gap-2">
+              <div className="bg-red-50 p-5 rounded-xl border border-red-100 shadow-sm mb-6">
+                <h3 className="text-sm font-bold text-red-800 mb-3 uppercase tracking-wide flex items-center gap-2">
                     <FaChalkboardTeacher /> Add New Subject
                 </h3>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <select 
-                    className="flex-1 p-3 rounded-lg border border-blue-200 bg-white"
+                    className="flex-1 p-3 rounded-lg border border-red-200 bg-white"
                     value={selectedSubjectToAdd}
                     onChange={(e) => setSelectedSubjectToAdd(e.target.value)}
                   >
@@ -184,7 +184,7 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
                       <option key={sub._id} value={sub._id}>{sub.name}</option>
                     ))}
                   </select>
-                  <button onClick={handleAddSubject} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">Add</button>
+                  <button onClick={handleAddSubject} className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700">Add</button>
                 </div>
               </div>
 

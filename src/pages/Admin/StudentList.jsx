@@ -116,8 +116,8 @@ const StudentList = () => {
            </div>
            
            <div className="flex gap-2">
-              <button onClick={handleExportExcel} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition-all"><FaFileExcel /> Excel</button>
-              <button onClick={handlePrintIDs} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all"><FaIdCard /> IDs</button>
+              <button onClick={handleExportExcel} className="flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-amber-700 transition-all"><FaFileExcel /> Excel</button>
+              <button onClick={handlePrintIDs} className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg hover:bg-orange-700 transition-all"><FaIdCard /> IDs</button>
               
               {/* ✅ BULK PROMOTE BUTTON (Header) */}
               <button 
@@ -162,7 +162,7 @@ const StudentList = () => {
                       {/* Name & ID */}
                       <td className="p-4">
                         <div className="font-extrabold text-slate-700">{s.firstName} {s.lastName}</div>
-                        <div className="text-xs font-bold text-blue-500">ID: {s.studentId}</div>
+                        <div className="text-xs font-bold text-red-500">ID: {s.studentId}</div>
                         <div className="text-xs text-slate-400">Father: {s.fatherName}</div>
                       </td>
                       
@@ -181,7 +181,7 @@ const StudentList = () => {
                       <td className="p-4 text-center">
                         <div className="flex justify-center gap-2">
                             <button onClick={() => handleWhatsAppMessage(s)} className={`p-2 rounded-lg ${s.whatsappEnabled ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-300'}`}><FaWhatsapp/></button>
-                            <a href={`tel:${s.phone}`} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><FaPhoneAlt/></a>
+                            <a href={`tel:${s.phone}`} className="p-2 bg-red-50 text-red-600 rounded-lg"><FaPhoneAlt/></a>
                         </div>
                       </td>
 
@@ -191,7 +191,7 @@ const StudentList = () => {
                           <button onClick={() => handleViewClick(s)} className="p-2 text-slate-400 hover:bg-slate-100 rounded" title="View"><FaEye/></button>
                           
                           {/* ID Card (Single) */}
-                          <button onClick={() => generateIDCards([s], `${s.firstName}_ID`)} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded" title="Print ID"><FaIdCard/></button>
+                          <button onClick={() => generateIDCards([s], `${s.firstName}_ID`)} className="p-2 text-orange-500 hover:bg-orange-50 rounded" title="Print ID"><FaIdCard/></button>
                           
                           {/* ✅ Single Promote Button (Arrow) */}
                           <button onClick={() => handlePromoteClick(s)} className="p-2 text-violet-500 hover:bg-violet-50 rounded" title="Promote"><FaLevelUpAlt/></button>

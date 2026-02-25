@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@theme {
+  /* Override default red to match the requested Logo custom Maroon: #ab0035 */
+  --color-red-50: #fbf0f3;
+  --color-red-100: #f5dbe3;
+  --color-red-200: #ecbccc;
+  --color-red-300: #e092ae;
+  --color-red-400: #d1628d;
+  --color-red-500: #c13d71;
+  --color-red-600: #ab0035; /* Primary Target Color */
+  --color-red-700: #8f0631;
+  --color-red-800: #780a2d;
+  --color-red-900: #650d29;
+  --color-red-950: #380312;
+}
+
 /* Keep your custom animations below */
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -30,9 +45,9 @@
   animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .form-input-style {
-  @apply bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium;
+  @apply bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition-all text-sm text-slate-700 placeholder:text-slate-400 font-medium;
 }
 
 .next-btn {
-  @apply bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 hover:-translate-y-0.5 active:translate-y-0;
+  @apply bg-red-600 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-red-700 transition-all shadow-lg shadow-red-100 hover:-translate-y-0.5 active:translate-y-0;
 }

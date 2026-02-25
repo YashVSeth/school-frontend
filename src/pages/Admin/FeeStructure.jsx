@@ -26,7 +26,7 @@ const FeeStructureManager = () => {
             <div className="p-8 max-w-4xl mx-auto">
                 <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100">
                     <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
-                        <FaLayerGroup className="text-blue-600" /> Fee Configuration
+                        <FaLayerGroup className="text-red-600" /> Fee Configuration
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -52,7 +52,7 @@ const FeeStructureManager = () => {
                     </div>
 
                     <div className="flex gap-4">
-                        <button onClick={handleApply} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 transition-all">
+                        <button onClick={handleApply} className="flex-1 bg-red-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-red-700 transition-all">
                             <FaMagic /> Apply to All Students
                         </button>
                     </div>

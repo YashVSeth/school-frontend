@@ -88,7 +88,7 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
                     ID: {student.studentId || 'N/A'}
                 </span>
                 <span className="flex items-center gap-2 px-2">
-                    <FaUserGraduate className="text-blue-400"/> Class: {className}
+                    <FaUserGraduate className="text-red-400"/> Class: {className}
                 </span>
               </div>
 
@@ -114,14 +114,14 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
           <button 
             onClick={() => setActiveTab('attendance')}
             className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors border-b-2
-              ${activeTab === 'attendance' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+              ${activeTab === 'attendance' ? 'border-red-600 text-red-600 bg-red-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
           >
             <FaCalendarCheck /> Attendance Report
           </button>
           <button 
             onClick={() => setActiveTab('marks')}
             className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors border-b-2
-              ${activeTab === 'marks' ? 'border-purple-600 text-purple-600 bg-purple-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+              ${activeTab === 'marks' ? 'border-orange-600 text-orange-600 bg-orange-50/50' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
           >
             <FaChartBar /> Academic Results
           </button>
@@ -131,7 +131,7 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
         <div className="p-6 overflow-y-auto bg-slate-50 flex-1 custom-scrollbar">
           {loading ? (
              <div className="flex flex-col items-center justify-center py-10 text-slate-400 animate-pulse gap-3">
-                <div className="w-8 h-8 border-4 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-slate-300 border-t-red-500 rounded-full animate-spin"></div>
                 Loading detailed records...
              </div>
           ) : (
@@ -142,11 +142,11 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
                   {/* Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white p-5 rounded-xl text-center border border-slate-100 shadow-sm flex flex-col items-center">
-                      <div className="bg-emerald-100 text-emerald-600 w-10 h-10 rounded-full flex items-center justify-center mb-2">
+                      <div className="bg-amber-100 text-amber-600 w-10 h-10 rounded-full flex items-center justify-center mb-2">
                         <FaCalendarCheck />
                       </div>
                       <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Present Days</p>
-                      <p className="text-3xl font-bold text-emerald-600 mt-1">{attendanceStats.present}</p>
+                      <p className="text-3xl font-bold text-amber-600 mt-1">{attendanceStats.present}</p>
                     </div>
                     
                     <div className="bg-white p-5 rounded-xl text-center border border-slate-100 shadow-sm flex flex-col items-center">
@@ -158,11 +158,11 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
                     </div>
                     
                     <div className="bg-white p-5 rounded-xl text-center border border-slate-100 shadow-sm flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${attendanceStats.percentage < 75 ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${attendanceStats.percentage < 75 ? 'bg-orange-100 text-orange-600' : 'bg-red-100 text-red-600'}`}>
                         %
                       </div>
                       <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Attendance %</p>
-                      <p className={`text-3xl font-bold mt-1 ${attendanceStats.percentage < 75 ? 'text-orange-500' : 'text-blue-600'}`}>
+                      <p className={`text-3xl font-bold mt-1 ${attendanceStats.percentage < 75 ? 'text-orange-500' : 'text-red-600'}`}>
                         {attendanceStats.percentage}%
                       </p>
                     </div>
@@ -211,7 +211,7 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
                               <td className="p-4">
                                 <span className={`px-2 py-1 rounded text-xs font-bold border 
                                   ${exam.grade === 'A' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                    exam.grade === 'F' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                    exam.grade === 'F' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                                   {exam.grade}
                                 </span>
                               </td>

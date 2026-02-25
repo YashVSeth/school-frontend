@@ -271,7 +271,7 @@ const StudentFeeModal = ({ isOpen, onClose, student }) => {
                       </div>
                       <div className="bg-slate-50 flex-1 p-4 rounded-xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount Paid</p>
-                        <p className="text-lg font-black text-emerald-600 mt-1">₹{activeInvoice.amountPaid.toLocaleString()}</p>
+                        <p className="text-lg font-black text-amber-600 mt-1">₹{activeInvoice.amountPaid.toLocaleString()}</p>
                       </div>
                       <div className="bg-orange-50 flex-1 p-4 rounded-xl border border-orange-100">
                         <p className="text-[10px] font-bold text-[#F05A28] uppercase tracking-widest">Balance</p>
@@ -307,17 +307,17 @@ const StudentFeeModal = ({ isOpen, onClose, student }) => {
 
                   if (isPaid) {
                     return (
-                      <div key={month} className="bg-white p-4 rounded-xl border-l-4 border-emerald-400 flex items-center justify-between shadow-sm">
+                      <div key={month} className="bg-white p-4 rounded-xl border-l-4 border-amber-400 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center"><FaCheckCircle size={18} /></div>
+                          <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center"><FaCheckCircle size={18} /></div>
                           <div>
                             <p className="font-bold text-slate-800">{month} Tuition</p>
-                            <p className="text-[10px] font-bold text-emerald-500 uppercase mt-0.5">Paid Successfully</p>
+                            <p className="text-[10px] font-bold text-amber-500 uppercase mt-0.5">Paid Successfully</p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="font-black text-slate-800">₹{inv.amount.toLocaleString()}</p>
-                          <p className="text-[10px] font-black text-emerald-500 tracking-widest uppercase mt-1">Cleared</p>
+                          <p className="text-[10px] font-black text-amber-500 tracking-widest uppercase mt-1">Cleared</p>
                         </div>
                       </div>
                     );
@@ -359,7 +359,7 @@ const StudentFeeModal = ({ isOpen, onClose, student }) => {
                       </div>
                       <button 
                         onClick={() => toggleSelection(month, feeStructure?.monthlyTuition || 0)}
-                        className="px-3 py-1 bg-white border border-slate-200 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-md hover:border-blue-400 hover:text-blue-500 transition-colors"
+                        className="px-3 py-1 bg-white border border-slate-200 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-md hover:border-red-400 hover:text-red-500 transition-colors"
                       >
                         Not Due (Generate)
                       </button>
@@ -386,7 +386,7 @@ const StudentFeeModal = ({ isOpen, onClose, student }) => {
                     <span>Current Session Dues</span>
                     <span className="font-bold text-slate-800">₹{totalBilled.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-emerald-600">
+                  <div className="flex justify-between text-amber-600">
                     <span>Total Payments Received</span>
                     <span className="font-bold">-₹{totalPaid.toLocaleString()}</span>
                   </div>
@@ -522,8 +522,8 @@ const StudentFeeModal = ({ isOpen, onClose, student }) => {
                       </div>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-slate-500 font-medium">Status</span>
-                        <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-emerald-100">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Paid Successfully
+                        <span className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-amber-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Paid Successfully
                         </span>
                       </div>
                     </div>

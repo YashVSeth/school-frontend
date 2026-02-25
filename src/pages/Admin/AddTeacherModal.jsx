@@ -125,7 +125,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
             {/* STEP 1: Basic Info */}
             {step === 1 && (
               <div className="space-y-6 animate-slide-up">
-                <h3 className="text-blue-900 font-bold flex items-center gap-2"><FaUser/> Basic Information</h3>
+                <h3 className="text-red-900 font-bold flex items-center gap-2"><FaUser/> Basic Information</h3>
                 <div className="flex flex-col md:flex-row gap-8">
                   <div className="w-full md:w-1/3 flex flex-col items-center gap-4">
                     <div className="w-32 h-32 aspect-square bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 overflow-hidden relative shadow-inner">
@@ -138,7 +138,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                       )}
                     </div>
                     <input type="file" ref={photoInputRef} onChange={(e) => handleFileChange(e, 'photo')} className="hidden" accept="image/*"/>
-                    <button type="button" onClick={() => photoInputRef.current.click()} className="w-full max-w-[160px] flex items-center justify-center gap-2 text-blue-600 text-xs font-bold border border-blue-100 px-4 py-2.5 rounded-xl hover:bg-blue-50 transition-all">
+                    <button type="button" onClick={() => photoInputRef.current.click()} className="w-full max-w-[160px] flex items-center justify-center gap-2 text-red-600 text-xs font-bold border border-red-100 px-4 py-2.5 rounded-xl hover:bg-red-50 transition-all">
                       <FaUpload /> {files.photo ? "Change Photo" : "Upload Photo"}
                     </button>
                   </div>
@@ -153,7 +153,7 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                         <div className="flex flex-wrap gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
                           {['Male', 'Female', 'Other'].map(g => (
                             <label key={g} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                                <input type="radio" name="gender" value={g} checked={formData.gender === g} onChange={handleChange} className="text-blue-600 focus:ring-blue-500" /> {g}
+                                <input type="radio" name="gender" value={g} checked={formData.gender === g} onChange={handleChange} className="text-red-600 focus:ring-red-500" /> {g}
                             </label>
                           ))}
                         </div>
@@ -221,21 +221,21 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                   <div className="space-y-5">
                     <h3 className="text-green-600 font-bold flex items-center gap-2"><FaFileAlt /> Documents</h3>
                     <div className="space-y-3">
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-blue-200 transition-all">
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-red-200 transition-all">
                         <span className="text-sm font-bold text-slate-600">Resume / CV</span>
-                        <button type="button" onClick={() => resumeInputRef.current.click()} className="text-blue-600 text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-blue-50 shadow-sm">{files.resume ? "Selected ✅" : "Upload File"}</button>
+                        <button type="button" onClick={() => resumeInputRef.current.click()} className="text-red-600 text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-red-50 shadow-sm">{files.resume ? "Selected ✅" : "Upload File"}</button>
                         <input type="file" ref={resumeInputRef} onChange={(e) => handleFileChange(e, 'resume')} className="hidden" />
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-blue-200 transition-all">
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-red-200 transition-all">
                         <span className="text-sm font-bold text-slate-600">ID Proof (Aadhaar)</span>
-                        <button type="button" onClick={() => idProofInputRef.current.click()} className="text-blue-600 text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-blue-50 shadow-sm">{files.idProof ? "Selected ✅" : "Upload File"}</button>
+                        <button type="button" onClick={() => idProofInputRef.current.click()} className="text-red-600 text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-red-50 shadow-sm">{files.idProof ? "Selected ✅" : "Upload File"}</button>
                         <input type="file" ref={idProofInputRef} onChange={(e) => handleFileChange(e, 'idProof')} className="hidden" />
                         </div>
                     </div>
                   </div>
                   
                   <div className="space-y-4 lg:pl-10 lg:border-l border-slate-100">
-                      <h3 className="text-blue-600 font-bold flex items-center gap-2"><FaLock /> System Access</h3>
+                      <h3 className="text-red-600 font-bold flex items-center gap-2"><FaLock /> System Access</h3>
                       
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Email ID (Login Username)</label>
@@ -255,14 +255,14 @@ const AddTeacherModal = ({ isOpen, onClose, onRefresh, teacherToEdit }) => {
                             />
                             
                             <button type="button" onClick={() => setShowPassword(!showPassword)} 
-                                className="absolute right-14 top-3 text-slate-400 hover:text-blue-600">
+                                className="absolute right-14 top-3 text-slate-400 hover:text-red-600">
                                 {showPassword ? <FaEyeSlash/> : <FaEye/>}
                             </button>
 
                             <button 
                                 type="button" 
                                 onClick={generatePassword} 
-                                className="bg-purple-100 text-purple-600 p-3 rounded-xl hover:bg-purple-200 transition-all"
+                                className="bg-orange-100 text-orange-600 p-3 rounded-xl hover:bg-orange-200 transition-all"
                                 title="Auto Generate Password"
                             >
                                 <FaMagic />

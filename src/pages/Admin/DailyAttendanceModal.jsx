@@ -95,7 +95,7 @@ const DailyAttendanceModal = ({ isOpen, onClose }) => {
         <div className="bg-slate-800 text-white p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
              <div className="bg-slate-700 p-2 rounded-lg">
-                <FaCalendarAlt className="text-emerald-400" size={20} />
+                <FaCalendarAlt className="text-amber-400" size={20} />
              </div>
              <div>
                 <h2 className="text-xl font-bold">Staff Attendance Register</h2>
@@ -114,7 +114,7 @@ const DailyAttendanceModal = ({ isOpen, onClose }) => {
                 type="date" 
                 value={date} 
                 onChange={(e) => setDate(e.target.value)}
-                className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-700 font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-700 font-medium focus:ring-2 focus:ring-red-500 outline-none"
             />
         </div>
 
@@ -146,8 +146,8 @@ const DailyAttendanceModal = ({ isOpen, onClose }) => {
                                                 onClick={() => handleStatusChange(teacher._id, 'Present')}
                                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border
                                                 ${status === 'Present' 
-                                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-emerald-200 shadow-md' 
-                                                    : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-300 hover:text-emerald-500'}`}
+                                                    ? 'bg-amber-500 text-white border-amber-500 shadow-amber-200 shadow-md' 
+                                                    : 'bg-white text-slate-400 border-slate-200 hover:border-amber-300 hover:text-amber-500'}`}
                                             >
                                                 Present
                                             </button>
@@ -183,7 +183,7 @@ const DailyAttendanceModal = ({ isOpen, onClose }) => {
             <button 
                 onClick={saveAttendance}
                 disabled={saving}
-                className="px-6 py-2.5 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                className="px-6 py-2.5 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 transition flex items-center gap-2 shadow-lg shadow-red-500/20"
             >
                 {saving ? 'Saving...' : <><FaSave /> Save Attendance</>}
             </button>

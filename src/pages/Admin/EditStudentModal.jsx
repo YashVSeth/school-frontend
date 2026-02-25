@@ -105,14 +105,14 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">First Name</label>
                     <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} required 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
                 {/* Last Name */}
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Last Name</label>
                     <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} required 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
                 <div className="space-y-1">
@@ -124,7 +124,7 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Class</label>
                     <select name="class" value={formData.class} onChange={handleChange} required 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white transition">
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-white transition">
                         <option value="">Select Class</option>
                         {classes && classes.map(cls => (
                             <option key={cls._id} value={cls._id}>{cls.grade} - {cls.section}</option>
@@ -135,25 +135,25 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Father's Name</label>
                     <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} required 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Phone</label>
                     <input type="text" name="phone" value={formData.phone} onChange={handleChange} required 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Date of Birth</label>
                     <input type="date" name="dob" value={formData.dob} onChange={handleChange} 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Gender</label>
                     <select name="gender" value={formData.gender} onChange={handleChange} 
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white transition">
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-white transition">
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
@@ -165,14 +165,14 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Height</label>
                     <input type="text" name="height" value={formData.height} onChange={handleChange} placeholder="e.g. 150 cm"
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
                 {/* ✅ 4. Added Weight Field */}
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Weight</label>
                     <input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 45 kg"
-                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
             </form>
@@ -187,7 +187,7 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                 type="submit" 
                 form="edit-form" 
                 disabled={loading}
-                className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {loading ? 'Saving...' : <><FaSave /> Save Changes</>}
             </button>

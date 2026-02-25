@@ -295,7 +295,7 @@ const Fees = () => {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
                   <div className="flex justify-between items-start mb-8">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg">
+                      <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-lg">
                         <FaBus />
                       </div>
                       <div>
