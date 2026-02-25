@@ -5,7 +5,7 @@ import {
   FaUserGraduate, FaChalkboard, FaWallet, FaMoneyBillWave,
   FaPlus, FaTrash, FaTimes, FaChevronDown
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -278,7 +278,7 @@ const Dashboard = () => {
                         <h3 className="font-bold text-slate-800 text-lg">{action.title}</h3>
                         <p className="text-sm text-slate-500 font-medium">{action.subtitle}</p>
                         <div className="mt-3 flex gap-2">
-                          <button className="px-5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-bold transition-colors">Action</button>
+                          <Link to="/admin/leaves" className="px-5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-bold transition-colors inline-block text-center">Action</Link>
                           <button className="px-5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition-colors">Dismiss</button>
                         </div>
                       </div>

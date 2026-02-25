@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FaUserCheck, FaUsers, FaCalendarAlt, FaClock, 
-  FaBullhorn, FaBirthdayCake, FaChartBar, FaSync,
-  FaSignOutAlt, FaChalkboardTeacher, FaUserTie, FaBookOpen 
+import {
+  FaUserCheck, FaBookOpen, FaCalendarDay, FaStar,
+  FaMapMarkerAlt, FaExclamationCircle
 } from 'react-icons/fa';
 
 const TeacherDashboard = () => {
@@ -13,22 +12,18 @@ const TeacherDashboard = () => {
     studentCount: 0,
     presence: 0,
   });
-  
+
   // 2. New Schedule States (New)
   const [myClass, setMyClass] = useState(null); // Monitor Class
   const [schedule, setSchedule] = useState([]); // Subject Classes
-  
+
+  // 3. Profile State
+  const [profile, setProfile] = useState(null);
+
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
 
   const navigate = useNavigate();
   const BASE_URL = import.meta.env.VITE_API_URL;
-
-  // 🕒 Live Clock
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentDate(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // 🔄 Data Fetching
   const fetchDashboardData = async () => {
@@ -42,15 +37,21 @@ const TeacherDashboard = () => {
       if (statsRes.data) {
         setStats({
           studentCount: statsRes.data.students ? statsRes.data.students.length : 0,
-          presence: 85, 
+          presence: 98, // Mocking to match screenshot "98%"
         });
       }
 
-      // B. ✅ Fetch Schedule & Class Teacher Info
+      // B. Fetch Schedule & Class Teacher Info
       const scheduleRes = await axios.get(`${BASE_URL}/api/teachers/my-schedule`, { headers });
       if (scheduleRes.data) {
         setMyClass(scheduleRes.data.classTeacher);
         setSchedule(scheduleRes.data.schedule);
+      }
+
+      // C. Fetch Teacher Identity/Profile
+      const profileRes = await axios.get(`${BASE_URL}/api/teachers/my-profile`, { headers });
+      if (profileRes.data) {
+        setProfile(profileRes.data);
       }
 
     } catch (error) {
@@ -64,157 +65,167 @@ const TeacherDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  // Logout Function
-  const handleLogout = () => {
-    const confirmLogout = window.confirm("Are you sure you want to logout?");
-    if (confirmLogout) {
-      localStorage.clear();
-      navigate('/login');
-    }
-  };
+  if (loading) return <div className="text-center mt-10 text-slate-400 font-bold">Loading Portal...</div>;
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen font-sans animate-fade-in">
-      
-      {/* 🌟 Header Section */}
-      <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-6 md:p-8 rounded-3xl text-white shadow-xl mb-8 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+    <div className="font-sans flex flex-col gap-6 px-1">
 
-        <div className="z-10 w-full md:w-auto">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2">
-            Namaste, Teacher ji <span className="animate-pulse">🙏</span>
-          </h1>
-          
-          {/* ✅ UPDATED: Class Teacher Info */}
-          <p className="opacity-90 text-lg flex items-center gap-2 mt-2">
-            <FaUserTie /> Class Teacher: 
-            <span className="font-bold bg-white/20 px-3 py-1 rounded-lg border border-white/30">
-              {myClass ? `Class ${myClass.grade} - ${myClass.section}` : "Not Assigned"}
-            </span>
-          </p>
+      {/* 🔴 OVERLAPPING PROFILE HEADER CARD */}
+      <div className="bg-[#8b0025] rounded-[24px] shadow-xl p-5 border border-white/10 relative overflow-hidden z-10 w-full mt-2">
+        {/* Top: Avatar & Name */}
+        <div className="flex items-center gap-4 mb-5">
+
+          {/* Avatar Box (Gold border based on mockup) */}
+          <div className="w-16 h-16 rounded-[14px] border-[3px] border-yellow-400 overflow-hidden bg-slate-200 shrink-0 shadow-inner">
+            {profile?.photoUrl ? (
+              <img src={profile.photoUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-[#ab0035] text-white font-bold text-xl">
+                {profile?.fullName?.charAt(0) || 'T'}
+              </div>
+            )}
+          </div>
+
+          {/* Name Details */}
+          <div className="flex flex-col text-white">
+            <span className="text-yellow-400 font-semibold text-[11px] tracking-wide uppercase">Namaste,</span>
+            <h2 className="text-lg font-bold leading-tight drop-shadow-sm">{profile?.fullName || 'Prof. Jitendra Dev'}</h2>
+            <p className="text-[10px] text-white/80 mt-0.5">Dept. of {profile?.specialization || 'Mathematics'} • RSSS-402</p>
+          </div>
         </div>
-        
-        <div className="mt-6 md:mt-0 z-10 flex flex-col md:items-end gap-3 w-full md:w-auto">
-          <button onClick={handleLogout} className="self-end bg-red-500/20 hover:bg-red-500/40 text-white px-4 py-2 rounded-full backdrop-blur-md border border-red-200/30 transition-all flex items-center gap-2 text-sm font-bold shadow-lg">
-            <FaSignOutAlt /> Logout
-          </button>
 
-          <div className="text-right bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/20 min-w-[200px]">
-            <p className="text-sm font-medium opacity-90 flex items-center gap-2 justify-end">
-               <FaCalendarAlt /> {currentDate.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}
-            </p>
-            <p className="text-3xl font-bold flex items-center gap-2 justify-end tracking-wider">
-               <FaClock className="text-sm" /> {currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
+        {/* Bottom: 3 Stats Columns inside slightly lighter container wrapper */}
+        <div className="bg-[#780020] rounded-[16px] py-3 px-4 flex justify-between items-center w-full">
+
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-yellow-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Attendance</span>
+            <span className="text-white font-extrabold text-sm">{stats.presence}%</span>
+          </div>
+
+          <div className="w-px h-8 bg-white/10"></div>
+
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-yellow-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Classes</span>
+            <span className="text-white font-extrabold text-sm">{schedule.length.toString().padStart(2, '0')}/06</span>
+          </div>
+
+          <div className="w-px h-8 bg-white/10"></div>
+
+          <div className="flex flex-col items-center flex-1">
+            <span className="text-yellow-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Status</span>
+            <span className="text-[#34d399] font-extrabold text-sm">{profile?.status || 'Active'}</span>
           </div>
         </div>
       </div>
 
-      {/* 📊 Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Card 1 */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-lg transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Students</h3>
-            <div className="bg-red-50 text-red-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><FaUsers size={20}/></div>
-          </div>
-          <p className="text-4xl font-extrabold text-slate-800">{loading ? "..." : stats.studentCount}</p>
-          <p className="text-xs text-slate-400 mt-2 font-medium">Registered in DB</p>
-        </div>
+      {/* 🖥️ DESKTOP 2-COLUMN GRID (Stacks on Mobile) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
 
-        {/* Card 2 */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-lg transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Avg. Attendance</h3>
-            <div className="bg-amber-50 text-amber-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><FaChartBar size={20}/></div>
-          </div>
-          <p className="text-4xl font-extrabold text-amber-500">{loading ? "..." : stats.presence}%</p>
-          <p className="text-xs text-slate-400 mt-2 font-medium">Last 7 Days Average</p>
-        </div>
+        {/* 👉 LEFT COLUMN (Actions & Alerts) */}
+        <div className="flex flex-col gap-6">
 
-        {/* Card 3: Quick Actions */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center gap-3">
-            <div className="flex justify-between items-center">
-                <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Quick Actions</h3>
-                <button onClick={fetchDashboardData} className="text-slate-400 hover:text-orange-600 transition"><FaSync/></button>
+
+          {/* ⚠️ SUBSTITUTION BOARD (Moved to Left Column for balance) */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-6 bg-[#ab0035] rounded-full"></div>
+              <h3 className="font-bold text-slate-800 text-lg">Substitution Board</h3>
             </div>
-          <button onClick={() => navigate('/teacher/attendance')} className="w-full bg-orange-600 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-orange-700 transition flex items-center justify-center gap-2 shadow-orange-200 shadow-lg">
-            <FaUserCheck /> Mark Attendance
-          </button>
-          <button onClick={() => navigate('/teacher/students')} className="w-full bg-slate-100 text-slate-700 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-200 transition border border-slate-200">
-            View Student List
-          </button>
-        </div>
-      </div>
 
-      {/* ✅ NEW SECTION: My Teaching Schedule */}
-      <div className="mb-8">
-        <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2 text-lg">
-            <FaChalkboardTeacher className="text-red-600"/> My Teaching Schedule
-        </h3>
-        {schedule.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {schedule.map((cls) => (
-                    <div key={cls._id} className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-                        <div className="flex justify-between items-start mb-3">
-                            <h4 className="text-xl font-bold text-slate-800">
-                                Class {cls.grade} - {cls.section}
-                            </h4>
-                            <span className="bg-red-50 text-red-600 text-xs font-bold px-2 py-1 rounded border border-red-100">
-                                {cls.subjects.length} Subjects
-                            </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {cls.subjects.map((sub, idx) => (
-                                <span key={idx} className="text-xs font-bold bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-100 flex items-center gap-1.5">
-                                    <FaBookOpen size={10} className="text-red-400"/> {sub}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        ) : (
-            <div className="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center">
-                <p className="text-slate-400">You have not been assigned any subjects yet.</p>
-            </div>
-        )}
-      </div>
-
-      {/* 🧩 Lower Section Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        {/* 📢 Notice Board */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
-            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <FaBullhorn className="text-orange-500"/> Notice Board
-            </h3>
-            <div className="space-y-4">
-                <div className="flex gap-4 p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <div className="text-center min-w-[50px]">
-                        <p className="text-xs font-bold text-orange-400 uppercase">Feb</p>
-                        <p className="text-xl font-bold text-orange-600">12</p>
-                    </div>
-                    <div>
-                        <p className="font-bold text-slate-800 text-sm">Parent Teacher Meeting (PTM)</p>
-                        <p className="text-xs text-slate-500 mt-1">Sabhi teachers ko 9:00 AM tak aana anivarya hai.</p>
-                    </div>
+            <div className="bg-[#fffdf0] rounded-2xl p-4 shadow-sm border border-yellow-200/50">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2 text-[#ab0035]">
+                  <FaExclamationCircle size={18} />
+                  <h4 className="font-bold text-sm">New Request Found</h4>
                 </div>
-            </div>
-        </div>
+                <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2.5 py-1 rounded-full border border-yellow-500 shadow-sm">Emergency</span>
+              </div>
 
-        {/* 🎂 Birthdays */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-             <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                <FaBirthdayCake className="text-pink-500"/> Upcoming Birthdays
-            </h3>
-            <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-lg">
-                No birthdays this week 🎉
-            </div>
-        </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed mb-4">
+                Prof. Sharma is on leave. Cover <span className="font-bold text-slate-800">Class X-B (Algebra)</span> at 02:00 PM?
+              </p>
 
-      </div>
+              <div className="flex gap-3">
+                <button className="flex-1 bg-[#8b0025] hover:bg-[#ab0035] text-white font-bold text-xs py-2.5 rounded-xl shadow-[0_4px_10px_rgba(139,0,37,0.2)] transition flex flex-col justify-center items-center">
+                  Accept
+                </button>
+                <button className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs py-2.5 rounded-xl transition flex flex-col justify-center items-center h-full">
+                  Decline
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div> {/* END LEFT COLUMN */}
+
+        {/* 👉 RIGHT COLUMN (Schedule) */}
+        <div className="flex flex-col gap-6">
+          {/* 📅 TODAY'S SCHEDULE (TIMELINE LIST) */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-6 bg-[#ab0035] rounded-full"></div>
+                <h3 className="font-bold text-slate-800 text-lg">Today's Schedule</h3>
+              </div>
+              <button onClick={() => navigate('/teacher/schedule')} className="text-[#ab0035] font-bold text-xs uppercase tracking-wide">View All</button>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-red-50 flex flex-col gap-4">
+
+              {schedule.length > 0 ? (
+                schedule.map((cls, index) => {
+                  // Create sequential mock times for UI visual purposes based on array index
+                  const hour = 9 + Math.floor(index * 1.5);
+                  const isAM = hour < 12;
+                  const displayHour = hour > 12 ? hour - 12 : hour;
+                  const displayTime = `${displayHour < 10 ? '0' : ''}${displayHour}:00`;
+
+                  return (
+                    <React.Fragment key={cls._id}>
+                      <div className={`flex items-center gap-4 ${index > 0 ? 'opacity-80' : ''}`}>
+                        {/* Left: Time Column */}
+                        <div className="flex flex-col items-center justify-center min-w-[60px]">
+                          <span className={`font-black text-lg leading-none ${index === 0 ? 'text-[#ab0035]' : 'text-slate-400'}`}>{displayTime}</span>
+                          <span className="text-slate-400 text-[10px] font-bold uppercase mt-1">{isAM ? 'AM' : 'PM'}</span>
+                        </div>
+
+                        {/* Divider Line */}
+                        <div className="w-px h-10 bg-slate-200"></div>
+
+                        {/* Right: Class Core Info */}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <h4 className={`font-bold text-sm ${index === 0 ? 'text-slate-800' : 'text-slate-700'}`}>
+                              {cls.subjects && cls.subjects.length > 0 ? cls.subjects.join(', ') : 'Assigned Class'} - {cls.grade} ({cls.section})
+                            </h4>
+                            {index === 0 && (
+                              <span className="bg-red-50 text-[#ab0035] text-[9px] font-bold px-2 py-0.5 rounded-full border border-red-100">Next</span>
+                            )}
+                          </div>
+                          <p className="text-slate-400 text-xs flex items-center gap-1.5 mt-1 font-medium">
+                            <FaMapMarkerAlt className="text-slate-300 text-[10px]" /> Main Building
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Separator if not the last item */}
+                      {index < schedule.length - 1 && (
+                        <hr className="border-slate-50 mx-2" />
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              ) : (
+                <div className="text-center p-4 text-sm text-slate-500 font-medium">
+                  No classes assigned to your schedule yet.
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div> {/* END RIGHT COLUMN */}
+
+      </div> {/* END DESKTOP GRID */}
 
     </div>
   );

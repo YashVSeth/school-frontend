@@ -8,22 +8,28 @@ import { Analytics } from "@vercel/analytics/react";
 
 // --- PAGES IMPORTS ---
 import Login from './pages/Login';
-import ResetPassword from "./pages/Admin/ResetPassword"; 
+import ResetPassword from "./pages/Admin/ResetPassword";
 
 // Admin Pages
-import Dashboard from './pages/Admin/Dashboard'; 
+import Dashboard from './pages/Admin/Dashboard';
 import Classes from './pages/Admin/Classes';
 import AddStudent from './pages/Admin/AddStudent';
 import StudentList from './pages/Admin/StudentList';
-import AttendanceAdmin from './pages/Admin/Attendance'; 
+import AttendanceAdmin from './pages/Admin/Attendance';
 import Teachers from './pages/Admin/Teachers';
 import Fees from './pages/Admin/Fees';
 import FinanceDashboard from './pages/Admin/FinanceDashboard';
 import FeeStructure from './pages/Admin/FeeStructure';
+import LeaveManagement from './pages/Admin/LeaveManagement';
 
 // Teacher Pages
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
-import TeacherAttendance from './pages/Teacher/TeacherAttendance'; 
+import TeacherAttendance from './pages/Teacher/TeacherAttendance';
+import TeacherMarks from './pages/Teacher/TeacherMarks';
+import TeacherLeave from './pages/Teacher/TeacherLeave';
+
+// --- LAYOUT WRAPPERS ---
+import TeacherLayout from './components/TeacherLayout';
 
 // --- PROTECTED ROUTE COMPONENT ---
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -67,6 +73,7 @@ function App() {
                 <Route path="finance" element={<FinanceDashboard />} />
                 <Route path="teachers" element={<Teachers />} />
                 <Route path="fee-structure" element={<FeeStructure />} />
+                <Route path="leaves" element={<LeaveManagement />} />
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
             </ProtectedRoute>
@@ -75,15 +82,23 @@ function App() {
           {/* --- TEACHER ROUTES --- */}
           <Route path="/teacher/*" element={
             <ProtectedRoute allowedRoles={['teacher']}>
-              <Routes>
-                {/* Dashboard */}
-                <Route path="dashboard" element={<TeacherDashboard />} />
-                
-                {/* Attendance Page */}
-                <Route path="attendance" element={<TeacherAttendance />} />
-                
-                <Route path="*" element={<Navigate to="dashboard" replace />} />
-              </Routes>
+              <TeacherLayout>
+                <Routes>
+                  {/* Dashboard */}
+                  <Route path="dashboard" element={<TeacherDashboard />} />
+
+                  {/* Attendance Page */}
+                  <Route path="attendance" element={<TeacherAttendance />} />
+
+                  {/* Marks / Grading Page */}
+                  <Route path="marks" element={<TeacherMarks />} />
+
+                  {/* Leave Application */}
+                  <Route path="leave" element={<TeacherLeave />} />
+
+                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                </Routes>
+              </TeacherLayout>
             </ProtectedRoute>
           } />
 
@@ -92,7 +107,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
-      
+
       {/* ✅ ADDED: This makes Vercel Analytics actually run! */}
       <Analytics />
     </>

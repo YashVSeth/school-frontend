@@ -7,7 +7,7 @@ import TeacherSalaryModal from './TeacherSalaryModal'; // ✅ IMPORT SALARY MODA
 import AssignSalaryModal from './AssignSalaryModal'; // ✅ IMPORT ASSIGN SALARY MODAL
 import axios from 'axios';
 import {
-  FaPlus, FaSearch, FaEnvelope, FaPhone, FaBook, FaTrash, FaEdit, FaCalendarCheck, FaClipboardList, FaMoneyCheckAlt
+  FaPlus, FaSearch, FaEnvelope, FaPhone, FaBook, FaTrash, FaEdit, FaCalendarCheck, FaClipboardList, FaMoneyCheckAlt, FaWhatsapp, FaCopy, FaCheckCircle
 } from 'react-icons/fa';
 
 const Teachers = () => {
@@ -29,6 +29,9 @@ const Teachers = () => {
 
   // ✅ NEW: Bulk Assign Salary State
   const [isAssignSalaryOpen, setIsAssignSalaryOpen] = useState(false);
+
+  // ✅ NEW: Success Credentials Pop-Up
+  const [successCredentials, setSuccessCredentials] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const BASE_URL = import.meta.env.VITE_API_URL;
@@ -86,6 +89,22 @@ const Teachers = () => {
         alert("Failed to delete");
       }
     }
+  };
+
+  const handleTeacherAdded = (credentials) => {
+    // Refresh the list immediately
+    fetchTeachers();
+
+    // If it was a new teacher and we got credentials back, show the success modal!
+    if (credentials) {
+      setSuccessCredentials(credentials);
+    }
+  };
+
+  const copyToClipboard = () => {
+    const text = `🎉 Welcome to Radheshyam Shikshan Sansthan!\n\nHere are your Teacher Portal login details:\n*Portal URL*: https://radheshyam.edu/login\n*Email*: ${successCredentials.email}\n*Password*: ${successCredentials.password}\n\nPlease log in and change your password immediately.`;
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard! You can now paste it into WhatsApp.");
   };
 
   const filteredTeachers = teachers.filter((teacher) =>
@@ -244,11 +263,60 @@ const Teachers = () => {
       </div>
 
       {/* MODALS */}
-      <AddTeacherModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onRefresh={fetchTeachers} teacherToEdit={selectedTeacher} />
+      <AddTeacherModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleTeacherAdded}
+        teacherToEdit={selectedTeacher}
+      />
       <TeacherAttendanceModal isOpen={isAttendanceOpen} onClose={() => setIsAttendanceOpen(false)} teacher={teacherForAttendance} />
       <DailyAttendanceModal isOpen={isDailyAttendanceOpen} onClose={() => setIsDailyAttendanceOpen(false)} />
       <TeacherSalaryModal isOpen={isSalaryOpen} onClose={() => setIsSalaryOpen(false)} teacher={teacherForSalary} />
-      <AssignSalaryModal isOpen={isAssignSalaryOpen} onClose={() => { setIsAssignSalaryOpen(false); fetchTeachers(); }} />
+      <AssignSalaryModal
+        isOpen={isAssignSalaryOpen}
+        onClose={() => { setIsAssignSalaryOpen(false); fetchTeachers(); }}
+      />
+
+      {/* ✅ NEW: SUCCESS CREDENTIALS MODAL */}
+      {successCredentials && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative text-center">
+            <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+              <FaCheckCircle className="text-green-500 text-4xl" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Teacher Added!</h2>
+            <p className="text-slate-500 mt-2 text-sm font-medium">
+              The account for <span className="text-slate-800 font-bold">{successCredentials.name}</span> has been successfully created.
+            </p>
+
+            <div className="mt-6 bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-3">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Login Email</p>
+                <p className="font-mono text-slate-800 font-bold bg-white p-2 rounded border border-slate-100">{successCredentials.email}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Generated Password</p>
+                <p className="font-mono text-slate-800 font-bold bg-white p-2 rounded border border-slate-100">{successCredentials.password}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setSuccessCredentials(null)}
+                className="flex-1 py-3 px-4 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={copyToClipboard}
+                className="flex-1 py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-transform active:scale-95 shadow-lg shadow-green-200 flex items-center justify-center gap-2"
+              >
+                <FaWhatsapp size={18} /> Copy Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </Layout>
   );
