@@ -28,7 +28,7 @@ const Dashboard = () => {
   const [classesList, setClassesList] = useState([]);
   const [subjectsList, setSubjectsList] = useState([]);
   const [teachersList, setTeachersList] = useState([]);
-  const [dashboardWidgets, setDashboardWidgets] = useState({ pendingActions: [], substitutions: [] });
+  const [dashboardWidgets, setDashboardWidgets] = useState({ pendingActions: [] });
 
   // Schedule State
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -40,10 +40,8 @@ const Dashboard = () => {
   const [showModal, setShowModal] = useState(false); // For adding a new subject
   const [newEntry, setNewEntry] = useState({ day: 'Monday', timeSlot: '9:00 AM', subject: '', color: '#4285F4' });
 
-  // Substitute Teacher Modal State
-  const [showSubModal, setShowSubModal] = useState(false);
-  const [selectedScheduleId, setSelectedScheduleId] = useState(null);
-  const [substituteTeacherId, setSubstituteTeacherId] = useState('');
+  // Leave Action Modal State
+  const [selectedActionLeave, setSelectedActionLeave] = useState(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -137,6 +135,28 @@ const Dashboard = () => {
       fetchSchedule();
     } catch (error) {
       toast.error("Failed to delete class");
+    }
+  };
+
+  const handleApproveLeave = async (id, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${BASE_URL}/api/leaves/${id}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(`Leave request ${newStatus.toLowerCase()}!`);
+
+      // Update widgets list
+      setDashboardWidgets(prev => ({
+        ...prev,
+        pendingActions: prev.pendingActions.filter(a => !(a.type === 'LEAVE' && a.id === id))
+      }));
+
+      setSelectedActionLeave(null);
+
+    } catch (error) {
+      console.error("Leave update error:", error);
+      toast.error("Failed to update leave status");
     }
   };
 
@@ -278,7 +298,11 @@ const Dashboard = () => {
                         <h3 className="font-bold text-slate-800 text-lg">{action.title}</h3>
                         <p className="text-sm text-slate-500 font-medium">{action.subtitle}</p>
                         <div className="mt-3 flex gap-2">
-                          <Link to="/admin/leaves" className="px-5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-bold transition-colors inline-block text-center">Action</Link>
+                          {action.type === 'LEAVE' ? (
+                            <button onClick={() => setSelectedActionLeave(action.leaveData)} className="px-5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-bold transition-colors inline-block text-center">Action</button>
+                          ) : (
+                            <Link to="/admin" className="px-5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-bold transition-colors inline-block text-center">Action</Link>
+                          )}
                           <button className="px-5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition-colors">Dismiss</button>
                         </div>
                       </div>
@@ -298,56 +322,6 @@ const Dashboard = () => {
 
           {/* RIGHT COLUMN */}
           <div className="space-y-6">
-
-            {/* Substitution Board */}
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                  <span className="text-rose-700">
-                    <FaUserGraduate size={20} />
-                  </span>
-                  <div>
-                    <span className="block">Teacher</span>
-                    <span className="block">Substitution Board</span>
-                  </div>
-                </h2>
-                <span className="bg-yellow-100 text-yellow-800 text-[10px] font-black uppercase px-2 py-1 rounded">Live Updates</span>
-              </div>
-
-              <div className="space-y-3">
-                {dashboardWidgets.substitutions && dashboardWidgets.substitutions.length > 0 ? (
-                  dashboardWidgets.substitutions.map((sub, idx) => (
-                    <div key={sub.id || idx} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex gap-2 text-xs font-bold text-slate-500">
-                          <span className="bg-rose-50 text-rose-700 px-2 rounded-sm py-0.5">{sub.period}</span>
-                          <span>{sub.className}</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-amber-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Confirmed</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Subject</span>
-                          <span className="font-bold text-slate-800">{sub.subject}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-black uppercase text-slate-400 block mb-0.5">Substitute</span>
-                          <span className="font-bold text-rose-600">{sub.substituteName}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 text-center text-slate-400 text-sm font-bold">
-                    No active substitutions.
-                  </div>
-                )}
-              </div>
-
-              <button className="w-full mt-3 py-2.5 bg-amber-50 hover:bg-amber-100 text-rose-700 font-bold text-sm rounded-xl transition-colors border border-amber-100">
-                Manage All Substitutions
-              </button>
-            </div>
 
             {/* Today's Schedule Block */}
             <div className="mt-8">
@@ -467,39 +441,18 @@ const Dashboard = () => {
                             {lessons.length > 0 ? (
                               lessons.map(lesson => {
                                 const defaultTeacher = getTeacherForSubject(lesson.subject);
-                                const hasSub = lesson.substituteTeacher && lesson.substituteTeacher !== null;
-                                let subName = "";
-                                if (hasSub) {
-                                  subName = typeof lesson.substituteTeacher === 'object'
-                                    ? (lesson.substituteTeacher.fullName || lesson.substituteTeacher.firstName + ' ' + lesson.substituteTeacher.lastName)
-                                    : teachersList.find(t => t._id === lesson.substituteTeacher)?.fullName || 'Unknown';
-                                }
 
                                 return (
                                   <div key={lesson._id} className="relative mb-2 rounded-xl p-3 shadow-sm border border-black/5 flex flex-col justify-between h-full min-h-[90px] group/card transition-all hover:shadow-md" style={{ backgroundColor: lesson.color || '#4285F4', color: '#fff' }}>
                                     <div>
                                       <div className="font-black text-sm drop-shadow-sm pr-6 leading-tight mb-1">{lesson.subject}</div>
-                                      {hasSub ? (
-                                        <div className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded backdrop-blur-sm inline-block mb-1">
-                                          <span className="line-through opacity-60 mr-1">{defaultTeacher}</span>
-                                          <span className="text-yellow-200">{subName}</span>
-                                        </div>
-                                      ) : (
-                                        <div className="text-[10px] font-bold opacity-90 truncate drop-shadow-sm flex items-center gap-1">
-                                          <FaChalkboard size={10} className="opacity-70" /> {defaultTeacher}
-                                        </div>
-                                      )}
+                                      <div className="text-[10px] font-bold opacity-90 truncate drop-shadow-sm flex items-center gap-1">
+                                        <FaChalkboard size={10} className="opacity-70" /> {defaultTeacher}
+                                      </div>
                                     </div>
 
                                     {isEditMode && (
                                       <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                        <button onClick={() => {
-                                          setSelectedScheduleId(lesson._id);
-                                          setSubstituteTeacherId(hasSub ? (lesson.substituteTeacher._id || lesson.substituteTeacher) : '');
-                                          setShowSubModal(true);
-                                        }} className="w-6 h-6 bg-white/20 hover:bg-white/40 text-white rounded-md flex items-center justify-center backdrop-blur-sm transition-all" title="Assign Substitute">
-                                          <FaChalkboard size={10} />
-                                        </button>
                                         <button onClick={() => handleDeleteSchedule(lesson._id)} className="w-6 h-6 bg-red-500/80 hover:bg-red-500 text-white rounded-md flex items-center justify-center backdrop-blur-sm transition-all shadow-sm">
                                           <FaTrash size={10} />
                                         </button>
@@ -525,52 +478,6 @@ const Dashboard = () => {
         )
       }
 
-      {/* --- SUBSTITUTE ASSIGNMENT MODAL --- */}
-      {
-        showSubModal && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 font-sans">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
-              <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-amber-50/50">
-                <h3 className="font-black text-xl text-slate-800 text-amber-900 flex items-center gap-2">
-                  <FaUserGraduate className="text-amber-600" /> Substitute
-                </h3>
-                <button onClick={() => setShowSubModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                  <FaTimes size={20} />
-                </button>
-              </div>
-              <div className="p-6">
-                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Available Teachers</label>
-                <select
-                  value={substituteTeacherId}
-                  onChange={(e) => setSubstituteTeacherId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-3 outline-none focus:border-amber-500 font-bold text-slate-700"
-                >
-                  <option value="">-- Clear Substitute / None --</option>
-                  {teachersList.map(t => (
-                    <option key={t._id} value={t._id}>{t.fullName || t.name || (t.firstName + " " + t.lastName)}</option>
-                  ))}
-                </select>
-
-                <div className="mt-6 flex justify-end gap-3">
-                  <button onClick={() => setShowSubModal(false)} className="px-4 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
-                  <button onClick={async () => {
-                    try {
-                      const token = localStorage.getItem('token');
-                      await axios.put(`${BASE_URL}/api/schedule/${selectedScheduleId}`, { substituteTeacher: substituteTeacherId || null }, { headers: { Authorization: `Bearer ${token}` } });
-                      setShowSubModal(false);
-                      fetchSchedule(); // refresh
-                      fetchInitialData(); // specifically refresh the dashboard widgets
-                      toast.success("Substitute assigned!");
-                    } catch (e) {
-                      toast.error("Failed to assign substitute.");
-                    }
-                  }} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all">Save changes</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
 
       {
         showModal && (
@@ -645,6 +552,34 @@ const Dashboard = () => {
           </div>
         )
       }
+
+      {/* LEAVE ACTION MODAL */}
+      {selectedActionLeave && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-800">Review Leave Request</h2>
+              <button onClick={() => setSelectedActionLeave(null)} className="text-slate-400 hover:text-slate-600"><FaTimes /></button>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl mb-6">
+              <p className="font-bold text-slate-800 mb-2">{selectedActionLeave.teacher?.fullName || 'Teacher'}</p>
+              <p className="text-sm text-slate-600 mb-2"><strong>Duration:</strong> {new Date(selectedActionLeave.startDate).toLocaleDateString()} to {new Date(selectedActionLeave.endDate).toLocaleDateString()}</p>
+              <p className="text-sm text-slate-600"><strong>Reason:</strong> {selectedActionLeave.reason}</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => handleApproveLeave(selectedActionLeave._id, 'Declined')} className="flex-1 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-bold transition-colors text-sm">
+                Decline
+              </button>
+              <button onClick={() => handleApproveLeave(selectedActionLeave._id, 'Approved')} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-colors text-sm">
+                Approve Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
     </Layout >
   );

@@ -28,37 +28,40 @@ const TeacherDashboard = () => {
   // 🔄 Data Fetching
   const fetchDashboardData = async () => {
     setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
 
-      // A. Fetch Student Stats
-      const statsRes = await axios.get(`${BASE_URL}/api/attendance/my-students`, { headers });
-      if (statsRes.data) {
-        setStats({
-          studentCount: statsRes.data.students ? statsRes.data.students.length : 0,
-          presence: 98, // Mocking to match screenshot "98%"
-        });
-      }
+    // A. Fetch Teacher Identity/Profile (Most Important)
+    const profileRes = await axios.get(`${BASE_URL}/api/teachers/my-profile`, { headers }).catch(e => {
+      console.error("Profile Fetch Error:", e);
+      return null;
+    });
+    if (profileRes?.data) setProfile(profileRes.data);
 
-      // B. Fetch Schedule & Class Teacher Info
-      const scheduleRes = await axios.get(`${BASE_URL}/api/teachers/my-schedule`, { headers });
-      if (scheduleRes.data) {
-        setMyClass(scheduleRes.data.classTeacher);
-        setSchedule(scheduleRes.data.schedule);
-      }
-
-      // C. Fetch Teacher Identity/Profile
-      const profileRes = await axios.get(`${BASE_URL}/api/teachers/my-profile`, { headers });
-      if (profileRes.data) {
-        setProfile(profileRes.data);
-      }
-
-    } catch (error) {
-      console.error("Dashboard Error:", error);
-    } finally {
-      setLoading(false);
+    // B. Fetch Student Stats
+    const statsRes = await axios.get(`${BASE_URL}/api/attendance/my-students`, { headers }).catch(e => {
+      console.error("Stats Fetch Error (Expected for new teachers):", e.response?.data?.message || e.message);
+      return null;
+    });
+    if (statsRes?.data) {
+      setStats({
+        studentCount: statsRes.data.students ? statsRes.data.students.length : 0,
+        presence: 98, // Mocking to match screenshot "98%"
+      });
     }
+
+    // C. Fetch Schedule & Class Teacher Info
+    const scheduleRes = await axios.get(`${BASE_URL}/api/teachers/my-schedule`, { headers }).catch(e => {
+      console.error("Schedule Fetch Error:", e.response?.data?.message || e.message);
+      return null;
+    });
+    if (scheduleRes?.data) {
+      setMyClass(scheduleRes.data.classTeacher || null);
+      setSchedule(scheduleRes.data.schedule || []);
+    }
+
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -118,47 +121,10 @@ const TeacherDashboard = () => {
         </div>
       </div>
 
-      {/* 🖥️ DESKTOP 2-COLUMN GRID (Stacks on Mobile) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+      {/* 🖥️ DESKTOP 1-COLUMN (Schedule Only) */}
+      <div className="grid grid-cols-1 gap-6 lg:gap-8 items-start">
 
-        {/* 👉 LEFT COLUMN (Actions & Alerts) */}
-        <div className="flex flex-col gap-6">
-
-
-          {/* ⚠️ SUBSTITUTION BOARD (Moved to Left Column for balance) */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-6 bg-[#ab0035] rounded-full"></div>
-              <h3 className="font-bold text-slate-800 text-lg">Substitution Board</h3>
-            </div>
-
-            <div className="bg-[#fffdf0] rounded-2xl p-4 shadow-sm border border-yellow-200/50">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-2 text-[#ab0035]">
-                  <FaExclamationCircle size={18} />
-                  <h4 className="font-bold text-sm">New Request Found</h4>
-                </div>
-                <span className="bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2.5 py-1 rounded-full border border-yellow-500 shadow-sm">Emergency</span>
-              </div>
-
-              <p className="text-slate-600 text-[11px] leading-relaxed mb-4">
-                Prof. Sharma is on leave. Cover <span className="font-bold text-slate-800">Class X-B (Algebra)</span> at 02:00 PM?
-              </p>
-
-              <div className="flex gap-3">
-                <button className="flex-1 bg-[#8b0025] hover:bg-[#ab0035] text-white font-bold text-xs py-2.5 rounded-xl shadow-[0_4px_10px_rgba(139,0,37,0.2)] transition flex flex-col justify-center items-center">
-                  Accept
-                </button>
-                <button className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs py-2.5 rounded-xl transition flex flex-col justify-center items-center h-full">
-                  Decline
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div> {/* END LEFT COLUMN */}
-
-        {/* 👉 RIGHT COLUMN (Schedule) */}
+        {/* 👉 MAIN SCHEDULE */}
         <div className="flex flex-col gap-6">
           {/* 📅 TODAY'S SCHEDULE (TIMELINE LIST) */}
           <div>

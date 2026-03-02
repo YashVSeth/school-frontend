@@ -6,7 +6,8 @@ import {
   FaWallet // ✅ Imported the Wallet icon for Finance
 } from 'react-icons/fa';
 import { FaMoneyBillWave } from 'react-icons/fa';
-import { FaLayerGroup } from 'react-icons/fa'; 
+import { FaLayerGroup } from 'react-icons/fa';
+import { FaFileInvoiceDollar } from 'react-icons/fa';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
@@ -70,7 +71,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             to="/admin/dashboard"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/dashboard')
-              ? 'bg-red-600 text-white shadow-lg'
+              ? 'bg-[#800000] text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
@@ -81,7 +82,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             to="/admin/classes"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/classes')
-              ? 'bg-orange-600 text-white shadow-lg'
+              ? 'bg-[#800000] text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
@@ -122,36 +123,37 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             )}
           </div>
 
-          <Link
-            to="/admin/fees"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/fees')
-              ? 'bg-slate-700 text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaMoneyBillWave />
-            <span className="font-semibold">Fee Structures</span>
-          </Link>
-          
           {/* ✅ NEW FINANCE DASHBOARD LINK */}
           <Link
             to="/admin/finance"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/finance')
-              ? 'bg-amber-600 text-white shadow-lg'
+              ? 'bg-[#800000] text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
             <FaWallet />
-            <span className="font-semibold">Finance & Fees</span>
+            <span className="font-semibold">Fees & Fee Structure</span>
+          </Link>
+
+          {/* ✅ SEPARATED FINANCE APP LINK */}
+          <Link
+            to="/admin/expenses"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/expenses')
+              ? 'bg-[#800000] text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaFileInvoiceDollar />
+            <span className="font-semibold">Finance</span>
           </Link>
 
           <Link
             to="/admin/teachers"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/teachers')
-              ? 'bg-gradient-to-r from-orange-500 to-orange-400 shadow-lg text-white'
+              ? 'bg-[#800000] text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >

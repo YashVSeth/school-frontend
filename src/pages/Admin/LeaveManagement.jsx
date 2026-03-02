@@ -2,16 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FaCalendarDay, FaCheckCircle, FaTimesCircle, FaClock, FaCalendarAlt } from 'react-icons/fa';
-import AssignSubstituteModal from './AssignSubstituteModal';
 
 const LeaveManagement = () => {
     const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('Pending'); // 'Pending', 'Approved', 'Declined', 'All'
-
-    // Sub Modal State
-    const [isSubModalOpen, setIsSubModalOpen] = useState(false);
-    const [selectedLeaveForSub, setSelectedLeaveForSub] = useState(null);
 
     const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -54,16 +49,10 @@ const LeaveManagement = () => {
             }
 
             // Trigger Substitution Modal Flow if Approved
-            if (newStatus === 'Approved') {
-                const approvedLeave = leaves.find(l => l._id === id);
-                if (approvedLeave && approvedLeave.teacher) {
-                    setSelectedLeaveForSub(approvedLeave);
-                    setIsSubModalOpen(true);
-                }
-            }
+            // Removed: Substitution feature deprecated.
         } catch (error) {
-            console.error("Update status error:", error);
-            toast.error("Failed to update status");
+            console.error("Update status error:", error.response?.data || error.message);
+            toast.error(error.response?.data?.message || "Failed to update status");
             // Revert optimism if error
             fetchLeaves();
         }
@@ -170,22 +159,6 @@ const LeaveManagement = () => {
                 </div>
             )}
 
-            {/* Substitution Assignment Modal Overlay */}
-            {isSubModalOpen && selectedLeaveForSub && (
-                <AssignSubstituteModal
-                    isOpen={isSubModalOpen}
-                    onClose={() => {
-                        setIsSubModalOpen(false);
-                        setSelectedLeaveForSub(null);
-                    }}
-                    absentTeacher={selectedLeaveForSub.teacher}
-                    leaveStartDate={selectedLeaveForSub.startDate}
-                    leaveEndDate={selectedLeaveForSub.endDate}
-                    onSubstituteAssigned={() => {
-                        fetchLeaves(); // Maybe refresh or just let it be
-                    }}
-                />
-            )}
         </div>
     );
 };

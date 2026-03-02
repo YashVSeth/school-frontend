@@ -21,6 +21,7 @@ import Fees from './pages/Admin/Fees';
 import FinanceDashboard from './pages/Admin/FinanceDashboard';
 import FeeStructure from './pages/Admin/FeeStructure';
 import LeaveManagement from './pages/Admin/LeaveManagement';
+import ExpenseCalculator from './pages/Admin/ExpenseCalculator';
 
 // Teacher Pages
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
@@ -71,6 +72,7 @@ function App() {
                 <Route path="attendance" element={<AttendanceAdmin />} />
                 <Route path="fees" element={<Fees />} />
                 <Route path="finance" element={<FinanceDashboard />} />
+                <Route path="expenses" element={<ExpenseCalculator />} />
                 <Route path="teachers" element={<Teachers />} />
                 <Route path="fee-structure" element={<FeeStructure />} />
                 <Route path="leaves" element={<LeaveManagement />} />

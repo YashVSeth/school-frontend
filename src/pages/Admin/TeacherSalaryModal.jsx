@@ -193,8 +193,8 @@ const TeacherSalaryModal = ({ isOpen, onClose, teacher }) => {
                             type="submit"
                             disabled={submitting || (paymentType !== 'Bonus' && amount > remainingBalance) || (paymentType !== 'Bonus' && remainingBalance === 0)}
                             className={`w-full !mt-8 text-white font-black py-4 rounded-xl shadow-lg transition-all flex justify-center items-center gap-2 group ${(paymentType !== 'Bonus' && (amount > remainingBalance || remainingBalance === 0))
-                                    ? 'bg-slate-300 cursor-not-allowed shadow-none'
-                                    : 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/30'
+                                ? 'bg-slate-300 cursor-not-allowed shadow-none'
+                                : 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/30'
                                 }`}
                         >
                             {submitting ? 'Processing...' : (
@@ -233,8 +233,10 @@ const TeacherSalaryModal = ({ isOpen, onClose, teacher }) => {
                                 <div key={record._id} className="p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors flex items-center justify-between group">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md tracking-wider ${record.paymentType.includes('Partial') ? 'bg-amber-100 text-amber-700' :
-                                                record.paymentType === 'Bonus' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700'
+                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md tracking-wider flex items-center gap-1
+                                                ${record.paymentType === 'Leave Deduction' ? 'bg-rose-100 text-rose-700 border border-rose-200' :
+                                                    record.paymentType.includes('Partial') ? 'bg-amber-100 text-amber-700' :
+                                                        record.paymentType === 'Bonus' ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-100 text-emerald-700'
                                                 }`}>
                                                 {record.paymentType}
                                             </span>
@@ -244,7 +246,9 @@ const TeacherSalaryModal = ({ isOpen, onClose, teacher }) => {
                                         {record.remarks && <p className="text-[11px] text-slate-500 mt-1 italic">"{record.remarks}"</p>}
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-lg font-black text-slate-800">₹{record.amountPaid.toLocaleString()}</div>
+                                        <div className={`text-lg font-black ${record.paymentType === 'Leave Deduction' ? 'text-rose-600' : 'text-slate-800'}`}>
+                                            {record.paymentType === 'Leave Deduction' ? '-' : ''}₹{record.amountPaid.toLocaleString()}
+                                        </div>
                                     </div>
                                 </div>
                             ))
