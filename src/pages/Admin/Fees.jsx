@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  FaSave, FaPlus, FaTrash, FaCopy, 
+import {
+  FaSave, FaPlus, FaTrash, FaCopy,
   FaInfoCircle, FaCheckCircle, FaBookOpen, FaBus
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import Sidebar from '../../components/Sidebar'; 
+import Sidebar from '../../components/Sidebar';
 
 const FREQUENCIES = ['Monthly', 'Quarterly', 'Yearly', 'One-time'];
 
@@ -16,7 +16,6 @@ const Fees = () => {
   const [saving, setSaving] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Dynamic Fee Arrays
   const [mandatoryFees, setMandatoryFees] = useState([]);
   const [optionalFees, setOptionalFees] = useState([]);
 
@@ -45,8 +44,8 @@ const Fees = () => {
     } catch (error) {
       toast.error("Failed to fetch classes");
       // Fallback for UI testing
-      setClasses([{_id: '1', grade: 'Class 1'}, {_id: '2', grade: 'Class 2'}]);
-      setSelectedClass({_id: '1', grade: 'Class 1'});
+      setClasses([{ _id: '1', grade: 'Class 1' }, { _id: '2', grade: 'Class 2' }]);
+      setSelectedClass({ _id: '1', grade: 'Class 1' });
     }
   };
 
@@ -58,7 +57,7 @@ const Fees = () => {
       const res = await axios.get(`${BASE_URL}/api/fees/structure/${classId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       // Load data into state if it exists, otherwise set defaults
       if (res.data && res.data.mandatoryFees && res.data.mandatoryFees.length > 0) {
         setMandatoryFees(res.data.mandatoryFees);
@@ -115,10 +114,10 @@ const Fees = () => {
         mandatoryFees,
         optionalFees,
         academicYear: '2026-27'
-      }, { 
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       toast.success(`Fee structure saved for ${selectedClass.grade}!`);
     } catch (error) {
       toast.error("Failed to save fee structure");
@@ -144,9 +143,9 @@ const Fees = () => {
   return (
     <div className="flex h-screen bg-slate-50 font-sans">
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
-        
+
         {/* --- MAIN HEADER --- */}
         <div className="bg-white px-8 py-6 border-b border-slate-200 flex justify-between items-center shrink-0 z-10">
           <div>
@@ -154,14 +153,26 @@ const Fees = () => {
               Admin Dashboard <span className="mx-2">›</span> <span className="text-orange-500">Fee Management</span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Fee Structure Management</h1>
-            <p className="text-sm font-medium text-slate-500 mt-1">Configure and manage fee categories for the Academic Year 2026-27</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm font-medium text-slate-500">Configure and manage fee categories for the Academic Year</p>
+              <select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                className="text-sm font-black text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none"
+              >
+                <option value="2025-26">2025-26</option>
+                <option value="2026-27">2026-27</option>
+                <option value="2027-28">2027-28</option>
+                <option value="2028-29">2028-29</option>
+              </select>
+            </div>
           </div>
-          
+
           <div className="flex gap-3">
             <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-all">
               <FaCopy className="text-slate-400" /> Copy to Grade...
             </button>
-            <button 
+            <button
               onClick={handleSave} disabled={saving}
               className="px-6 py-2 bg-[#F05A28] hover:bg-[#d94e20] text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-md shadow-orange-500/20 transition-all disabled:opacity-70"
             >
@@ -171,10 +182,10 @@ const Fees = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row flex-1 overflow-hidden p-6 gap-6">
-          
+
           {/* --- LEFT SIDEBAR (Grades & Total) --- */}
           <div className="w-full lg:w-72 flex flex-col gap-6 shrink-0">
-            
+
             {/* Grade Selector */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[50vh]">
               <div className="p-4 border-b border-slate-100 bg-slate-50">
@@ -187,11 +198,10 @@ const Fees = () => {
                     <button
                       key={c._id}
                       onClick={() => setSelectedClass(c)}
-                      className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-3 transition-all ${
-                        isActive 
-                          ? 'bg-orange-50 text-[#F05A28]' 
-                          : 'bg-transparent text-slate-600 hover:bg-slate-50'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-3 transition-all ${isActive
+                        ? 'bg-orange-50 text-[#F05A28]'
+                        : 'bg-transparent text-slate-600 hover:bg-slate-50'
+                        }`}
                     >
                       <FaBookOpen className={isActive ? 'text-[#F05A28]' : 'text-slate-400'} />
                       {c.grade}
@@ -209,7 +219,7 @@ const Fees = () => {
                 <span className="text-4xl font-black tracking-tight">₹{grandTotal.toLocaleString()}</span>
                 <span className="text-xs font-bold text-slate-400">/ year</span>
               </div>
-              
+
               <div className="space-y-3 text-sm font-medium border-t border-slate-700 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-300">Mandatory</span>
@@ -226,7 +236,7 @@ const Fees = () => {
 
           {/* --- RIGHT AREA (Fee Builders) --- */}
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6 pb-20">
-            
+
             {loading ? (
               <div className="h-full flex items-center justify-center font-bold text-slate-400 animate-pulse">Loading Configuration...</div>
             ) : (
@@ -243,11 +253,11 @@ const Fees = () => {
                         <p className="text-xs font-bold text-slate-400 mt-1">Compulsory payments for all enrolled students</p>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleAddFee('mandatory')}
                       className="text-[#F05A28] hover:bg-orange-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
                     >
-                      <FaPlus size={12}/> Add Fee Type
+                      <FaPlus size={12} /> Add Fee Type
                     </button>
                   </div>
 
@@ -263,14 +273,14 @@ const Fees = () => {
                     {mandatoryFees.map(fee => (
                       <div key={fee.id} className="grid grid-cols-12 gap-4 items-center group">
                         <div className="col-span-6">
-                          <input 
+                          <input
                             type="text" value={fee.name} onChange={(e) => handleFeeChange('mandatory', fee.id, 'name', e.target.value)}
                             placeholder="e.g. Tuition Fee"
                             className="w-full bg-transparent border-b border-slate-200 hover:border-slate-300 focus:border-[#F05A28] py-2 outline-none font-bold text-slate-700 transition-colors"
                           />
                         </div>
                         <div className="col-span-3">
-                          <select 
+                          <select
                             value={fee.frequency} onChange={(e) => handleFeeChange('mandatory', fee.id, 'frequency', e.target.value)}
                             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 outline-none focus:border-[#F05A28] appearance-none cursor-pointer"
                           >
@@ -278,7 +288,7 @@ const Fees = () => {
                           </select>
                         </div>
                         <div className="col-span-3 flex items-center gap-3">
-                          <input 
+                          <input
                             type="number" value={fee.amount} onChange={(e) => handleFeeChange('mandatory', fee.id, 'amount', e.target.value)}
                             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 text-right outline-none focus:border-[#F05A28]"
                           />
@@ -303,11 +313,11 @@ const Fees = () => {
                         <p className="text-xs font-bold text-slate-400 mt-1">Fees applied based on specific services used</p>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleAddFee('optional')}
                       className="text-[#F05A28] hover:bg-orange-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
                     >
-                      <FaPlus size={12}/> Add Fee Type
+                      <FaPlus size={12} /> Add Fee Type
                     </button>
                   </div>
 
@@ -323,7 +333,7 @@ const Fees = () => {
                     {optionalFees.map(fee => (
                       <div key={fee.id} className="grid grid-cols-12 gap-4 items-center group">
                         <div className="col-span-6 relative flex items-center">
-                          <input 
+                          <input
                             type="text" value={fee.name} onChange={(e) => handleFeeChange('optional', fee.id, 'name', e.target.value)}
                             placeholder="e.g. Transport Facility"
                             className="w-full bg-transparent border-b border-slate-200 hover:border-slate-300 focus:border-[#F05A28] py-2 pr-6 outline-none font-bold text-slate-700 transition-colors"
@@ -331,7 +341,7 @@ const Fees = () => {
                           <FaInfoCircle className="absolute right-2 text-slate-300 text-xs" />
                         </div>
                         <div className="col-span-3">
-                          <select 
+                          <select
                             value={fee.frequency} onChange={(e) => handleFeeChange('optional', fee.id, 'frequency', e.target.value)}
                             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 outline-none focus:border-[#F05A28] appearance-none cursor-pointer"
                           >
@@ -339,7 +349,7 @@ const Fees = () => {
                           </select>
                         </div>
                         <div className="col-span-3 flex items-center gap-3">
-                          <input 
+                          <input
                             type="number" value={fee.amount} onChange={(e) => handleFeeChange('optional', fee.id, 'amount', e.target.value)}
                             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 text-right outline-none focus:border-[#F05A28]"
                           />

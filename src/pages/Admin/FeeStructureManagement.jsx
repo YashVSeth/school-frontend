@@ -160,8 +160,8 @@ const FeeStructureManagement = ({ onBack }) => {
                                     key={cls._id}
                                     onClick={() => setSelectedClassId(cls._id)}
                                     className={`flex justify-between items-center px-4 py-3 rounded-xl transition-all ${selectedClassId === cls._id
-                                            ? 'bg-[#fdedee] text-[#7a1717] font-black border border-[#f5d7d7]'
-                                            : 'text-slate-600 font-bold hover:bg-slate-50 border border-transparent'
+                                        ? 'bg-[#fdedee] text-[#7a1717] font-black border border-[#f5d7d7]'
+                                        : 'text-slate-600 font-bold hover:bg-slate-50 border border-transparent'
                                         }`}
                                 >
                                     <span>{cls.grade}</span>
@@ -239,8 +239,8 @@ const FeeStructureManagement = ({ onBack }) => {
                                                     </td>
                                                     <td className="px-6 py-5">
                                                         <span className={`px-2.5 py-1 rounded text-[9px] font-black tracking-widest uppercase ${fee.frequency === 'MONTHLY' ? 'bg-blue-50 text-blue-600' :
-                                                                fee.frequency === 'ONE-TIME' ? 'bg-orange-50 text-orange-600' :
-                                                                    'bg-purple-50 text-purple-600'
+                                                            fee.frequency === 'ONE-TIME' ? 'bg-orange-50 text-orange-600' :
+                                                                'bg-purple-50 text-purple-600'
                                                             }`}>
                                                             {fee.frequency}
                                                         </span>
@@ -301,8 +301,8 @@ const FeeStructureManagement = ({ onBack }) => {
                                                     </td>
                                                     <td className="px-6 py-5">
                                                         <span className={`px-2.5 py-1 rounded text-[9px] font-black tracking-widest uppercase ${fee.frequency === 'MONTHLY' ? 'bg-blue-50 text-blue-600' :
-                                                                fee.frequency === 'ONE-TIME' ? 'bg-orange-50 text-orange-600' :
-                                                                    'bg-purple-50 text-purple-600'
+                                                            fee.frequency === 'ONE-TIME' ? 'bg-orange-50 text-orange-600' :
+                                                                'bg-purple-50 text-purple-600'
                                                             }`}>
                                                             {fee.frequency}
                                                         </span>

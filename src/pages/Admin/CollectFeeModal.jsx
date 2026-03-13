@@ -25,6 +25,7 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
 
     // Fee Maps 
     const [feeStructureMap, setFeeStructureMap] = useState({});
+    const [existingInvoices, setExistingInvoices] = useState([]);
 
     // Payment State
     const [paymentMode, setPaymentMode] = useState('Cash');
@@ -58,6 +59,7 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
         setAmountToPay('0.00');
         setPaymentMode('Cash');
         setFeeStructureMap({});
+        setExistingInvoices([]);
     };
 
     const fetchLastTxn = async () => {
@@ -141,6 +143,13 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
                     setAmountToPay('0.00');
                 }
             }
+
+            // Fetch existing invoices for the student to check for partial payments
+            const invRes = await axios.get(`${BASE_URL}/api/fees/invoices/${student._id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setExistingInvoices(invRes.data || []);
+
         } catch (error) {
             console.error("Failed to fetch struct", error);
         }
@@ -148,14 +157,23 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
 
     // Listen to Category Changes
     useEffect(() => {
-        if (feeStructureMap[category] !== undefined) {
+        const titleToLookFor = `${month} ${category}`;
+        const existingInvoice = existingInvoices.find(inv => inv.title === titleToLookFor);
+
+        if (existingInvoice) {
+            // Already generated, show remaining balance
+            const remaining = existingInvoice.amount - existingInvoice.amountPaid;
+            setBaseAmount(remaining.toFixed(2));
+            setAmountToPay(remaining.toFixed(2));
+        } else if (feeStructureMap[category] !== undefined) {
+            // New invoice
             setBaseAmount(feeStructureMap[category].toFixed(2));
             setAmountToPay(feeStructureMap[category].toFixed(2));
         } else {
             setBaseAmount('0.00');
             setAmountToPay('0.00');
         }
-    }, [category, feeStructureMap]);
+    }, [category, month, feeStructureMap, existingInvoices]);
 
     const handleProcessPayment = async () => {
         if (!selectedStudent) return toast.error("Please select a student first.");
@@ -195,7 +213,8 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
             }
 
         } catch (error) {
-            toast.error("Failed to process payment");
+            const errorMessage = error.response?.data?.message || "Failed to process payment";
+            toast.error(errorMessage);
         } finally {
             setProcessing(false);
         }

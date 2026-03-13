@@ -21,6 +21,7 @@ const FinanceDashboard = () => {
     recentTransactions: [],
     collectionTrends: []
   });
+  const [academicYear, setAcademicYear] = useState('2026-27');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -31,13 +32,13 @@ const FinanceDashboard = () => {
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [academicYear]);
 
   const fetchStats = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${BASE_URL}/api/fees/global-stats`, {
+      const res = await axios.get(`${BASE_URL}/api/fees/global-stats?academicYear=${academicYear}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(res.data);
@@ -60,7 +61,8 @@ const FinanceDashboard = () => {
       const res = await axios.post(`${BASE_URL}/api/fees/invoices/bulk`, {
         monthTitle: `${currentMonth} Tuition`,
         defaultAmount: 0, // Backend auto-overrides this now
-        classId: null
+        classId: null,
+        academicYear
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -76,7 +78,7 @@ const FinanceDashboard = () => {
     try {
       const toastId = toast.loading("Fetching ledger data...");
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${BASE_URL}/api/fees/monthly-report`, {
+      const res = await axios.get(`${BASE_URL}/api/fees/monthly-report?academicYear=${academicYear}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -150,7 +152,19 @@ const FinanceDashboard = () => {
               {/* PAGE HEADER */}
               <div className="mb-8">
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">Financial Overview</h1>
-                <p className="text-slate-500 font-medium mt-1">Real-time school fee collection status for Academic Year 2026-27</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-slate-500 font-medium">Real-time school fee collection status for Academic Year</p>
+                  <select
+                    value={academicYear}
+                    onChange={(e) => setAcademicYear(e.target.value)}
+                    className="text-sm font-black text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none"
+                  >
+                    <option value="2025-26">2025-26</option>
+                    <option value="2026-27">2026-27</option>
+                    <option value="2027-28">2027-28</option>
+                    <option value="2028-29">2028-29</option>
+                  </select>
+                </div>
               </div>
 
               {loading ? (
