@@ -616,27 +616,12 @@ const FinanceDashboard = () => {
                                 <FaUniversity className="text-slate-400" size={13} />
                                 <span className="text-sm font-bold text-slate-700">Cash</span>
                               </div>
-                              <span className="text-sm font-black text-slate-700">48%</span>
+                              <span className="text-sm font-black text-slate-700">60%</span>
                             </div>
                             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: '48%' }}></div>
+                              <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: '60%' }}></div>
                             </div>
-                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.48)}</p>
-                          </div>
-
-                          {/* Card */}
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2.5">
-                                <FaCreditCard className="text-slate-400" size={13} />
-                                <span className="text-sm font-bold text-slate-700">Card</span>
-                              </div>
-                              <span className="text-sm font-black text-slate-700">32%</span>
-                            </div>
-                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-slate-800 rounded-full transition-all duration-700" style={{ width: '32%' }}></div>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.32)}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.60)}</p>
                           </div>
 
                           {/* Online */}
@@ -646,12 +631,12 @@ const FinanceDashboard = () => {
                                 <FaMobileAlt className="text-slate-400" size={13} />
                                 <span className="text-sm font-bold text-slate-700">Online</span>
                               </div>
-                              <span className="text-sm font-black text-slate-700">20%</span>
+                              <span className="text-sm font-black text-slate-700">40%</span>
                             </div>
                             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-slate-400 rounded-full transition-all duration-700" style={{ width: '20%' }}></div>
+                              <div className="h-full bg-slate-800 rounded-full transition-all duration-700" style={{ width: '40%' }}></div>
                             </div>
-                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.20)}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.40)}</p>
                           </div>
                         </div>
 
