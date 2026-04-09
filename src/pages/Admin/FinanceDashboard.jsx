@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   FaMoneyBillWave, FaClipboardList, FaExclamationTriangle,
-  FaFileInvoice, FaDownload, FaCog, FaBars, FaWallet
+  FaFileInvoice, FaDownload, FaCog, FaBars, FaWallet,
+  FaCheckCircle, FaClock, FaPlus, FaChevronDown
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import {
@@ -12,6 +13,47 @@ import * as XLSX from 'xlsx';
 import Sidebar from '../../components/Sidebar';
 import CollectFeeModal from './CollectFeeModal';
 import FeeStructureManagement from './FeeStructureManagement';
+
+// ──────────── STAT CARD COMPONENT ────────────
+const StatCard = ({ icon: Icon, iconBg, iconColor, label, value, sub, borderColor }) => (
+  <div className={`bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all relative overflow-hidden`}>
+    <div className={`absolute top-0 left-0 w-full h-1`} style={{ backgroundColor: borderColor }} />
+    <div className="flex items-start justify-between">
+      <div className="flex-1 pt-2">
+        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">{label}</p>
+        <h2 className="text-2xl font-black text-slate-800 tracking-tight">{value}</h2>
+        {sub && <p className="text-xs font-medium text-slate-400 mt-1.5">{sub}</p>}
+      </div>
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg mt-2 shrink-0`} style={{ backgroundColor: iconBg, color: iconColor }}>
+        <Icon />
+      </div>
+    </div>
+  </div>
+);
+
+// ──────────── FREQUENCY BADGE ────────────
+const FrequencyBadge = ({ frequency }) => {
+  const styles = {
+    'MONTHLY': { bg: '#eef6ff', text: '#2563eb', border: '#bfdbfe' },
+    'QUARTERLY': { bg: '#f5f3ff', text: '#7c3aed', border: '#ddd6fe' },
+    'HALF-YEARLY': { bg: '#fef3c7', text: '#b45309', border: '#fde68a' },
+    'YEARLY': { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' },
+    'ONE-TIME': { bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' },
+    'Monthly': { bg: '#eef6ff', text: '#2563eb', border: '#bfdbfe' },
+    'Quarterly': { bg: '#f5f3ff', text: '#7c3aed', border: '#ddd6fe' },
+    'Yearly': { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' },
+    'One-time': { bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' },
+  };
+  const s = styles[frequency] || styles['YEARLY'];
+  return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-black tracking-wider uppercase"
+      style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
+      {frequency}
+    </span>
+  );
+};
+
+// ──────────── MAIN COMPONENT ────────────
 
 const FinanceDashboard = () => {
   const [stats, setStats] = useState({
@@ -23,15 +65,21 @@ const FinanceDashboard = () => {
   });
   const [academicYear, setAcademicYear] = useState('2026-27');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('structure');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollectFeeModalOpen, setIsCollectFeeModalOpen] = useState(false);
+
+  // Fee structure data for the unified table
+  const [classes, setClasses] = useState([]);
+  const [feeStructures, setFeeStructures] = useState({});
+  const [structureLoading, setStructureLoading] = useState(false);
 
   const BASE_URL = import.meta.env.VITE_API_URL;
   const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
   useEffect(() => {
     fetchStats();
+    fetchAllFeeStructures();
   }, [academicYear]);
 
   const fetchStats = async () => {
@@ -42,34 +90,59 @@ const FinanceDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(res.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load financial stats");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchAllFeeStructures = async () => {
+    setStructureLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Fetch classes
+      const classRes = await axios.get(`${BASE_URL}/api/classes`, { headers });
+      const classList = classRes.data || [];
+      setClasses(classList);
+
+      // Fetch fee structures for all classes
+      const structureMap = {};
+      await Promise.all(classList.map(async (cls) => {
+        try {
+          const res = await axios.get(`${BASE_URL}/api/fee-structure/${cls._id}?academicYear=${academicYear}`, { headers });
+          structureMap[cls._id] = res.data;
+        } catch {
+          structureMap[cls._id] = { mandatoryFees: [], optionalFees: [] };
+        }
+      }));
+      setFeeStructures(structureMap);
+    } catch {
+      // silently fail
+    } finally {
+      setStructureLoading(false);
+    }
+  };
+
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
+    return '₹' + new Intl.NumberFormat('en-IN').format(amount || 0);
   };
 
   const handleGenerateBills = async () => {
-    if (!window.confirm(`Generate default Tuition Invoices for ${currentMonth} for ALL active students based on their specific Grade Fee Structure?`)) return;
-
+    if (!window.confirm(`Generate default Tuition Invoices for ${currentMonth} for ALL active students?`)) return;
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post(`${BASE_URL}/api/fees/invoices/bulk`, {
         monthTitle: `${currentMonth} Tuition`,
-        defaultAmount: 0, // Backend auto-overrides this now
+        defaultAmount: 0,
         classId: null,
         academicYear
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+      }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success(res.data.message);
       fetchStats();
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate default bills");
     }
   };
@@ -81,13 +154,10 @@ const FinanceDashboard = () => {
       const res = await axios.get(`${BASE_URL}/api/fees/monthly-report?academicYear=${academicYear}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
       if (!res.data || res.data.length === 0) {
-        toast.update(toastId, { render: "No transactions found for this month.", type: "info", isLoading: false, autoClose: 3000 });
+        toast.update(toastId, { render: "No transactions found.", type: "info", isLoading: false, autoClose: 3000 });
         return;
       }
-
-      // Map raw data into clean Excel rows
       const rows = res.data.map(tx => ({
         "Date": new Date(tx.date).toLocaleDateString(),
         "Student ID": tx.student?.studentId || 'N/A',
@@ -98,37 +168,100 @@ const FinanceDashboard = () => {
         "Amount Received (₹)": tx.amount,
         "Remaining Balance (₹)": tx.remainingBalance || 0
       }));
-
-      // Generate Worksheet
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Fee Report");
-
-      // Trigger Download
       XLSX.writeFile(workbook, `Fee_Collection_Report_${currentMonth.replace(' ', '_')}.xlsx`);
-
-      toast.update(toastId, { render: "Report Generated Successfully!", type: "success", isLoading: false, autoClose: 3000 });
-    } catch (error) {
-      console.error(error);
+      toast.update(toastId, { render: "Report Generated!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch {
       toast.error("Failed to download report");
     }
   };
 
-  // Derived Statistics for the Chart Footer
+  // Derived stats
   const validTrends = stats.collectionTrends?.filter(t => t.total > 0) || [];
   const averageCollection = validTrends.length > 0
-    ? validTrends.reduce((acc, curr) => acc + curr.total, 0) / validTrends.length
-    : 0;
-
-  // Find the Peak Month
+    ? validTrends.reduce((acc, curr) => acc + curr.total, 0) / validTrends.length : 0;
   let peakMonth = { name: '-', total: 0 };
   if (stats.collectionTrends) {
-    stats.collectionTrends.forEach(t => {
-      if (t.total > peakMonth.total) peakMonth = t;
-    });
+    stats.collectionTrends.forEach(t => { if (t.total > peakMonth.total) peakMonth = t; });
   }
 
-  // Mock Late Fees since it isn't tracked in DB
+  // Build the unified fee schedule table data
+  const buildFeeSchedule = () => {
+    if (classes.length === 0) return { categories: [], classColumns: [] };
+
+    // Use first 4 classes for the table columns (like the screenshot shows 4 grades)
+    const classColumns = classes.slice(0, classes.length);
+    
+    // Collect all unique fee names across all classes
+    const allFeeNames = new Set();
+    Object.values(feeStructures).forEach(struct => {
+      (struct.mandatoryFees || []).forEach(f => allFeeNames.add(f.name));
+      (struct.optionalFees || []).forEach(f => allFeeNames.add(f.name));
+    });
+
+    const categories = Array.from(allFeeNames).map(name => {
+      const row = { name };
+      // Find frequency from first class that has this fee
+      let freq = '';
+      classColumns.forEach(cls => {
+        const struct = feeStructures[cls._id];
+        if (!struct) return;
+        const fee = [...(struct.mandatoryFees || []), ...(struct.optionalFees || [])].find(f => f.name === name);
+        if (fee) {
+          row[cls._id] = fee.amount;
+          if (!freq) freq = fee.frequency;
+        } else {
+          row[cls._id] = null; // N/A
+        }
+      });
+      row.frequency = freq;
+      return row;
+    });
+
+    return { categories, classColumns };
+  };
+
+  const { categories: feeCategories, classColumns } = buildFeeSchedule();
+
+  // Calculate annual totals per class
+  const annualTotals = {};
+  classColumns.forEach(cls => {
+    let total = 0;
+    feeCategories.forEach(cat => {
+      if (cat[cls._id] !== null && cat[cls._id] !== undefined) {
+        total += cat[cls._id];
+      }
+    });
+    annualTotals[cls._id] = total;
+  });
+
+  // Paid on time % calculation
+  const totalTransactions = stats.recentTransactions?.length || 0;
+  const paidOnTimePercent = stats.totalStudents > 0
+    ? ((stats.totalStudents - (stats.overdueStudents || 0)) / stats.totalStudents * 100).toFixed(1)
+    : '0.0';
+
+  // Fee category badge colors
+  const categoryColors = [
+    { bg: '#eef6ff', text: '#2563eb' },
+    { bg: '#f5f3ff', text: '#7c3aed' },
+    { bg: '#ecfdf5', text: '#059669' },
+    { bg: '#fff7ed', text: '#ea580c' },
+    { bg: '#fef3c7', text: '#b45309' },
+    { bg: '#fdf2f8', text: '#db2777' },
+    { bg: '#f0f9ff', text: '#0284c7' },
+    { bg: '#fbf0f3', text: '#ab0035' },
+  ];
+  const getCategoryColor = (idx) => categoryColors[idx % categoryColors.length];
+
+  const tabs = [
+    { id: 'structure', label: 'Fee Structure' },
+    { id: 'history', label: 'Payment History' },
+    { id: 'report', label: 'Collection Report' },
+    { id: 'manage', label: 'Manage Structure' },
+  ];
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans">
@@ -137,7 +270,7 @@ const FinanceDashboard = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200">
-          <h2 className="font-bold text-slate-800">EduPay Dashboard</h2>
+          <h2 className="font-bold text-slate-800">Fees & Payments</h2>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600 bg-slate-100 rounded-lg">
             <FaBars />
           </button>
@@ -145,264 +278,387 @@ const FinanceDashboard = () => {
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
 
-          {activeTab === 'structure' ? (
-            <FeeStructureManagement onBack={() => setActiveTab('overview')} />
+          {activeTab === 'manage' ? (
+            <FeeStructureManagement onBack={() => { setActiveTab('structure'); fetchAllFeeStructures(); }} />
           ) : (
             <>
-              {/* PAGE HEADER */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Financial Overview</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-slate-500 font-medium">Real-time school fee collection status for Academic Year</p>
-                  <select
-                    value={academicYear}
-                    onChange={(e) => setAcademicYear(e.target.value)}
-                    className="text-sm font-black text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none"
+              {/* ═══════════ PAGE HEADER ═══════════ */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                  <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fees & Payments</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-slate-500 font-medium">Academic Year</p>
+                    <select
+                      value={academicYear}
+                      onChange={(e) => setAcademicYear(e.target.value)}
+                      className="text-sm font-black text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer"
+                    >
+                      <option value="2025-26">2025-26</option>
+                      <option value="2026-27">2026-27</option>
+                      <option value="2027-28">2027-28</option>
+                    </select>
+                    <span className="text-slate-400 mx-1">·</span>
+                    <p className="text-slate-500 font-medium">Fee collection and structure</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    onClick={handleDownloadReport}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
                   >
-                    <option value="2025-26">2025-26</option>
-                    <option value="2026-27">2026-27</option>
-                    <option value="2027-28">2027-28</option>
-                    <option value="2028-29">2028-29</option>
-                  </select>
+                    <FaDownload className="text-slate-400" /> Export
+                  </button>
+                  <button
+                    onClick={() => setIsCollectFeeModalOpen(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm shadow-sm hover:bg-red-700 transition-all"
+                  >
+                    <FaPlus /> Record Payment
+                  </button>
                 </div>
               </div>
 
+              {/* ═══════════ STAT CARDS ═══════════ */}
               {loading ? (
-                <div className="p-10 text-center font-bold text-slate-500 animate-pulse">Calculating Ledger...</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 h-28 animate-pulse">
+                      <div className="h-3 bg-slate-100 rounded w-24 mb-3 mt-3" />
+                      <div className="h-6 bg-slate-100 rounded w-32" />
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <>
-                  {/* TOP 3 METRIC CARDS */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Total Fees Collected */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-12 h-12 bg-emerald-100/50 text-emerald-500 rounded-xl flex items-center justify-center text-xl">
-                          <FaMoneyBillWave />
-                        </div>
-                        <span className="text-emerald-500 font-bold text-xs flex items-center gap-1">↗ +12.5%</span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-400 mb-1">Total Fees Collected</p>
-                        <h2 className="text-3xl font-black text-slate-800">{formatCurrency(stats.totalCollected)}</h2>
-                        <p className="text-[10px] font-bold text-slate-400 mt-2">vs. last month ₹40.1L</p>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  <StatCard
+                    icon={FaMoneyBillWave}
+                    iconBg="#dcfce7" iconColor="#16a34a"
+                    borderColor="#16a34a"
+                    label="Total Collected"
+                    value={formatCurrency(stats.totalCollected)}
+                    sub="This year"
+                  />
+                  <StatCard
+                    icon={FaExclamationTriangle}
+                    iconBg="#fee2e2" iconColor="#ef4444"
+                    borderColor="#ef4444"
+                    label="Outstanding"
+                    value={formatCurrency(stats.grandTotalDue)}
+                    sub={`${stats.totalStudents} students pending`}
+                  />
+                  <StatCard
+                    icon={FaCheckCircle}
+                    iconBg="#dbeafe" iconColor="#2563eb"
+                    borderColor="#2563eb"
+                    label="Paid on Time"
+                    value={`${paidOnTimePercent}%`}
+                    sub={stats.totalStudents > 0 ? `of ${stats.totalStudents} students` : 'No data'}
+                  />
+                  <StatCard
+                    icon={FaClock}
+                    iconBg="#fef3c7" iconColor="#f59e0b"
+                    borderColor="#f59e0b"
+                    label="Overdue"
+                    value={stats.overdueStudents || stats.totalStudents || 0}
+                    sub="Students overdue 30+ days"
+                  />
+                </div>
+              )}
 
-                    {/* Outstanding Balances */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-12 h-12 bg-amber-100/50 text-amber-500 rounded-xl flex items-center justify-center text-xl">
-                          <FaClipboardList />
-                        </div>
-                        <span className="text-amber-500 font-bold text-xs flex items-center gap-1">→ 0.2%</span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-400 mb-1">Outstanding Balances</p>
-                        <h2 className="text-3xl font-black text-slate-800">{formatCurrency(stats.grandTotalDue)}</h2>
-                        <p className="text-[10px] font-bold text-slate-400 mt-2">{stats.totalStudents} students with pending balances</p>
-                      </div>
-                    </div>
-
-                    {/* Late Fees Charged */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-12 h-12 bg-red-100/50 text-red-600 rounded-xl flex items-center justify-center text-xl">
-                          <FaExclamationTriangle />
-                        </div>
-                        <span className="text-red-500 font-bold text-xs flex items-center gap-1">↗ +2.4%</span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-400 mb-1">Late Fees Charged</p>
-                        <h2 className="text-3xl font-black text-slate-800">{formatCurrency(stats.lateFeesCharged || 0)}</h2>
-                        <p className="text-[10px] font-bold text-slate-400 mt-2">Applied to 85 overdue accounts</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* MAIN CHARTS AND TABLES */}
-                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-8">
-
-                    {/* LEFT: Collection Trends Chart */}
-                    <div className="xl:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                      <div className="flex justify-between items-start mb-8">
-                        <div>
-                          <h3 className="text-lg font-black text-slate-800">Collection Trends</h3>
-                          <p className="text-xs font-medium text-slate-400 mt-1">Monthly breakdown</p>
-                        </div>
-                        <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider">
-                          Last 6 Months
-                        </span>
-                      </div>
-
-                      <div className="h-[250px] w-full mb-6 relative">
-                        {stats.collectionTrends && stats.collectionTrends.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.collectionTrends}>
-                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
-                              <Tooltip
-                                cursor={{ fill: 'transparent' }}
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
-                              />
-                              <Bar dataKey="total" radius={[6, 6, 6, 6]} barSize={36}>
-                                {stats.collectionTrends.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.name === peakMonth.name ? '#800000' : '#f3e8e8'} />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">No chart data</div>
+              {/* ═══════════ TABS ═══════════ */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="border-b border-slate-100 px-6 pt-1">
+                  <div className="flex gap-1">
+                    {tabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-5 py-3.5 text-sm font-bold transition-all relative ${
+                          activeTab === tab.id
+                            ? 'text-red-600'
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        {tab.label}
+                        {activeTab === tab.id && (
+                          <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-red-600 rounded-t-full" />
                         )}
-                      </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                      <div className="mt-auto space-y-3 pt-4 border-t border-slate-100">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-bold text-slate-500">Average Collection</span>
-                          <span className="font-black text-slate-800">{formatCurrency(averageCollection)} / Mo</span>
+                {/* ─── FEE STRUCTURE TAB ─── */}
+                {activeTab === 'structure' && (
+                  <div className="p-6">
+                    {structureLoading ? (
+                      <div className="py-16 text-center font-bold text-slate-400 animate-pulse">Loading fee schedule...</div>
+                    ) : feeCategories.length === 0 ? (
+                      <div className="py-16 text-center">
+                        <FaClipboardList className="mx-auto text-4xl text-slate-300 mb-4" />
+                        <p className="font-bold text-slate-500 text-lg">No fee structure defined yet</p>
+                        <p className="text-slate-400 text-sm mt-1">Go to "Manage Structure" tab to configure fees</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-base font-black text-slate-800">
+                            Fee Schedule — Academic Year {academicYear}
+                          </h3>
+                          <p className="text-xs font-medium text-slate-400">All amounts in INR</p>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-bold text-slate-500">Peak Month</span>
-                          <span className="font-black text-[#800000]">{peakMonth.name}</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* RIGHT: Recent Fee Payments Table */}
-                    <div className="xl:col-span-8 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                      <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-black text-slate-800">Recent Fee Payments</h3>
-                        <button className="text-[#800000] font-black text-xs hover:underline uppercase tracking-wide">
-                          View All
-                        </button>
-                      </div>
-
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[600px]">
-                          <thead>
-                            <tr className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                              <th className="pb-4">Student Name</th>
-                              <th className="pb-4">Class</th>
-                              <th className="pb-4">Fee Type</th>
-                              <th className="pb-4">Amount</th>
-                              <th className="pb-4">Balance</th>
-                              <th className="pb-4">Date</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-sm">
-                            {stats.recentTransactions && stats.recentTransactions.length > 0 ? (
-                              stats.recentTransactions.map((tx, idx) => {
-                                const initials = tx.student ? `${tx.student.firstName?.charAt(0) || ''}${tx.student.lastName?.charAt(0) || ''}`.toUpperCase() : 'N/A';
-
-                                // Mock assigning different pill colors based on fee type since original DB just stores strings
-                                const isBus = tx.monthsPaid?.some(m => m.toLowerCase().includes('bus'));
-                                const isLab = tx.monthsPaid?.some(m => m.toLowerCase().includes('lab'));
-
-                                let pillStyle = "bg-blue-50 text-blue-600";
-                                let pillText = "TUITION";
-
-                                if (isBus) { pillStyle = "bg-purple-50 text-purple-600"; pillText = "BUS FEE"; }
-                                else if (isLab) { pillStyle = "bg-orange-50 text-orange-600"; pillText = "LAB FEE"; }
-
-                                // Mock outstanding balance to match mockup (or we'd need to calculate it deeply per student)
-                                const balance = tx.remainingBalance || 0;
-
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left">
+                            <thead>
+                              <tr className="border-b border-slate-100">
+                                <th className="pb-4 pr-6 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest w-[260px]">Fee Category</th>
+                                {classColumns.map(cls => (
+                                  <th key={cls._id} className="pb-4 px-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">
+                                    {cls.grade}
+                                  </th>
+                                ))}
+                                <th className="pb-4 pl-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-right">Frequency</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {feeCategories.map((cat, idx) => {
+                                const catColor = getCategoryColor(idx);
                                 return (
-                                  <tr key={tx._id} className="border-t border-slate-50 hover:bg-slate-50 transition-colors">
-                                    <td className="py-4">
+                                  <tr key={cat.name} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
+                                    <td className="py-4 pr-6">
                                       <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-red-50 text-[#800000] font-black text-xs flex items-center justify-center shrink-0">
-                                          {initials}
-                                        </div>
-                                        <span className="font-bold text-slate-800">
-                                          {tx.student ? `${tx.student.firstName} ${tx.student.lastName}` : 'Unknown'}
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black"
+                                          style={{ backgroundColor: catColor.bg, color: catColor.text }}>
+                                          {cat.name.split(' ')[0]}
                                         </span>
+                                        <span className="font-bold text-slate-700 text-sm">{cat.name}</span>
                                       </div>
                                     </td>
-                                    <td className="py-4 font-semibold text-slate-600">
-                                      {tx.student?.class?.grade || 'N/A'}
-                                    </td>
-                                    <td className="py-4">
-                                      <span className={`px-2.5 py-1 rounded text-[9px] font-black tracking-widest uppercase ${pillStyle}`}>
-                                        {pillText}
-                                      </span>
-                                    </td>
-                                    <td className="py-4 font-black text-slate-900">
-                                      {formatCurrency(tx.amount)}
-                                    </td>
-                                    <td className={`py-4 font-bold ${balance > 0 ? 'text-amber-500' : 'text-slate-400'}`}>
-                                      {balance > 0 ? formatCurrency(balance) : '₹0'}
-                                    </td>
-                                    <td className="py-4 text-slate-500 font-medium text-xs">
-                                      {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                                    {classColumns.map(cls => (
+                                      <td key={cls._id} className="py-4 px-4 text-center">
+                                        {cat[cls._id] !== null && cat[cls._id] !== undefined ? (
+                                          <span className="font-bold text-slate-700 text-sm">₹{new Intl.NumberFormat('en-IN').format(cat[cls._id])}</span>
+                                        ) : (
+                                          <span className="text-slate-300 text-xs font-bold italic">N/A</span>
+                                        )}
+                                      </td>
+                                    ))}
+                                    <td className="py-4 pl-4 text-right">
+                                      <FrequencyBadge frequency={cat.frequency} />
                                     </td>
                                   </tr>
                                 );
-                              })
-                            ) : (
-                              <tr>
-                                <td colSpan="6" className="py-8 text-center text-slate-400 font-bold">No recent transactions found.</td>
+                              })}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t-2 border-slate-200 bg-slate-50/50">
+                                <td className="py-4 pr-6">
+                                  <span className="font-black text-slate-800 text-sm">Annual Total</span>
+                                </td>
+                                {classColumns.map(cls => (
+                                  <td key={cls._id} className="py-4 px-4 text-center">
+                                    <span className="font-black text-red-600 text-sm">₹{new Intl.NumberFormat('en-IN').format(annualTotals[cls._id] || 0)}</span>
+                                  </td>
+                                ))}
+                                <td className="py-4 pl-4" />
                               </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-400">
-                        <span>Showing {stats.recentTransactions?.length || 0} of 1,240 transactions</span>
-                        <div className="flex gap-2">
-                          <button className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 transition-colors">Previous</button>
-                          <button className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-50 transition-colors">Next</button>
+                            </tfoot>
+                          </table>
                         </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* ─── PAYMENT HISTORY TAB ─── */}
+                {activeTab === 'history' && (
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-base font-black text-slate-800">Recent Fee Payments</h3>
+                      <button className="text-red-600 font-black text-xs hover:underline uppercase tracking-wide">View All</button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left min-w-[600px]">
+                        <thead>
+                          <tr className="text-[10px] font-extrabold uppercase text-slate-400 tracking-widest">
+                            <th className="pb-4">Student Name</th>
+                            <th className="pb-4">Class</th>
+                            <th className="pb-4">Fee Type</th>
+                            <th className="pb-4">Amount</th>
+                            <th className="pb-4">Balance</th>
+                            <th className="pb-4">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-sm">
+                          {stats.recentTransactions && stats.recentTransactions.length > 0 ? (
+                            stats.recentTransactions.map((tx) => {
+                              const initials = tx.student ? `${tx.student.firstName?.charAt(0) || ''}${tx.student.lastName?.charAt(0) || ''}`.toUpperCase() : 'N/A';
+                              const isBus = tx.monthsPaid?.some(m => m.toLowerCase().includes('bus'));
+                              const isLab = tx.monthsPaid?.some(m => m.toLowerCase().includes('lab'));
+                              let pillStyle = "bg-blue-50 text-blue-600 border-blue-100";
+                              let pillText = "TUITION";
+                              if (isBus) { pillStyle = "bg-purple-50 text-purple-600 border-purple-100"; pillText = "BUS FEE"; }
+                              else if (isLab) { pillStyle = "bg-orange-50 text-orange-600 border-orange-100"; pillText = "LAB FEE"; }
+                              const balance = tx.remainingBalance || 0;
+
+                              return (
+                                <tr key={tx._id} className="border-t border-slate-50 hover:bg-slate-50 transition-colors">
+                                  <td className="py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 font-black text-xs flex items-center justify-center shrink-0">
+                                        {initials}
+                                      </div>
+                                      <span className="font-bold text-slate-800">
+                                        {tx.student ? `${tx.student.firstName} ${tx.student.lastName}` : 'Unknown'}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-4 font-semibold text-slate-600">{tx.student?.class?.grade || 'N/A'}</td>
+                                  <td className="py-4">
+                                    <span className={`px-2.5 py-1 rounded text-[9px] font-black tracking-widest uppercase border ${pillStyle}`}>
+                                      {pillText}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 font-black text-slate-900">{formatCurrency(tx.amount)}</td>
+                                  <td className={`py-4 font-bold ${balance > 0 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                    {balance > 0 ? formatCurrency(balance) : '₹0'}
+                                  </td>
+                                  <td className="py-4 text-slate-500 font-medium text-xs">
+                                    {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan="6" className="py-16 text-center text-slate-400 font-bold">No recent transactions found.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-400">
+                      <span>Showing {stats.recentTransactions?.length || 0} transactions</span>
+                      <div className="flex gap-2">
+                        <button className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Previous</button>
+                        <button className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">Next</button>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  {/* BOTTOM ACTION GRID */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Action 1 */}
-                    <button
-                      onClick={() => setIsCollectFeeModalOpen(true)}
-                      className="bg-[#800000] hover:bg-[#660000] text-white rounded-2xl p-6 shadow-md transition-all flex items-center gap-5 text-left group"
-                    >
-                      <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                        <FaFileInvoice />
-                      </div>
+                {/* ─── COLLECTION REPORT TAB ─── */}
+                {activeTab === 'report' && (
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      {/* Chart */}
                       <div>
-                        <p className="text-[10px] font-bold text-red-200 uppercase tracking-widest mb-1">Create New</p>
-                        <h3 className="text-xl font-black">Fee Invoice</h3>
-                      </div>
-                    </button>
+                        <div className="flex justify-between items-start mb-6">
+                          <div>
+                            <h3 className="text-base font-black text-slate-800">Collection Trends</h3>
+                            <p className="text-xs font-medium text-slate-400 mt-1">Monthly breakdown</p>
+                          </div>
+                          <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border border-slate-100">
+                            Last 6 Months
+                          </span>
+                        </div>
 
-                    {/* Action 2 */}
-                    <button
-                      onClick={handleDownloadReport}
-                      className="bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-6 shadow-sm transition-all flex items-center gap-5 text-left group"
-                    >
-                      <div className="w-12 h-12 bg-red-50 text-[#800000] rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                        <FaDownload />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Download</p>
-                        <h3 className="text-xl font-black text-slate-800">Monthly Report</h3>
-                      </div>
-                    </button>
+                        <div className="h-[280px] w-full mb-6">
+                          {stats.collectionTrends && stats.collectionTrends.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={stats.collectionTrends}>
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
+                                <Tooltip
+                                  cursor={{ fill: 'transparent' }}
+                                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                                />
+                                <Bar dataKey="total" radius={[6, 6, 6, 6]} barSize={36}>
+                                  {stats.collectionTrends.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.name === peakMonth.name ? '#ab0035' : '#f5dbe3'} />
+                                  ))}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">No chart data</div>
+                          )}
+                        </div>
 
-                    {/* Action 3 */}
-                    <button
-                      onClick={() => setActiveTab('structure')}
-                      className="bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-6 shadow-sm transition-all flex items-center gap-5 text-left group"
-                    >
-                      <div className="w-12 h-12 bg-red-50 text-[#800000] rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                        <FaCog />
+                        <div className="space-y-3 pt-4 border-t border-slate-100">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-bold text-slate-500">Average Collection</span>
+                            <span className="font-black text-slate-800">{formatCurrency(averageCollection)} / Mo</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-bold text-slate-500">Peak Month</span>
+                            <span className="font-black text-red-600">{peakMonth.name}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Configure</p>
-                        <h3 className="text-xl font-black text-slate-800">Fee Structure</h3>
+
+                      {/* Quick Actions */}
+                      <div className="space-y-4">
+                        <h3 className="text-base font-black text-slate-800 mb-4">Quick Actions</h3>
+
+                        <button
+                          onClick={() => setIsCollectFeeModalOpen(true)}
+                          className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                        >
+                          <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                            <FaFileInvoice />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-red-200 uppercase tracking-widest mb-0.5">Create New</p>
+                            <h4 className="text-lg font-black">Fee Invoice</h4>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={handleDownloadReport}
+                          className="w-full bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                        >
+                          <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                            <FaDownload />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Download</p>
+                            <h4 className="text-lg font-black text-slate-800">Monthly Report</h4>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => setActiveTab('manage')}
+                          className="w-full bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                        >
+                          <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                            <FaCog />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Configure</p>
+                            <h4 className="text-lg font-black text-slate-800">Fee Structure</h4>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={handleGenerateBills}
+                          className="w-full bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                        >
+                          <div className="w-11 h-11 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                            <FaClipboardList />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Generate</p>
+                            <h4 className="text-lg font-black text-slate-800">Monthly Invoices</h4>
+                          </div>
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </>
           )}
         </div>
