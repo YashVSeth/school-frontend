@@ -23,14 +23,18 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
 
-    // Fee Items State
+    // Fee Items from FeeStructure (what the student OWES based on grade)
     const [feeItems, setFeeItems] = useState([]);
     const [selectedFeeIds, setSelectedFeeIds] = useState([]);
+
+    // Existing invoices from DB (what's already been billed)
     const [existingInvoices, setExistingInvoices] = useState([]);
 
     // Payment State
     const [paymentMode, setPaymentMode] = useState('Cash');
     const [processing, setProcessing] = useState(false);
+
+    // Transaction history from DB
     const [paymentHistory, setPaymentHistory] = useState([]);
 
     const handleSearch = async (e) => {
@@ -41,6 +45,7 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
             setFeeItems([]);
             setSelectedFeeIds([]);
             setPaymentHistory([]);
+            setExistingInvoices([]);
         }
 
         if (query.length < 2) {
@@ -81,50 +86,93 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
             const headers = { Authorization: `Bearer ${token}` };
             const classId = student.class?._id || student.class;
 
-            // Fetch fee structure
+            // 1. Fetch fee structure for this student's class
+            let structureItems = [];
             if (classId) {
                 const res = await axios.get(`${BASE_URL}/api/fee-structure/${classId}`, { headers });
                 if (res.data) {
-                    const items = [];
                     (res.data.mandatoryFees || []).forEach((f, i) => {
-                        items.push({
+                        structureItems.push({
                             id: f._id || `m-${i}`,
                             name: f.name,
                             amount: f.amount,
                             frequency: f.frequency,
-                            type: 'mandatory',
-                            dueDate: getDueDate(f.frequency),
-                            status: getStatus(f.frequency)
+                            type: 'mandatory'
                         });
                     });
                     (res.data.optionalFees || []).forEach((f, i) => {
-                        items.push({
+                        structureItems.push({
                             id: f._id || `o-${i}`,
                             name: f.name,
                             amount: f.amount,
                             frequency: f.frequency,
-                            type: 'optional',
-                            dueDate: getDueDate(f.frequency),
-                            status: getStatus(f.frequency)
+                            type: 'optional'
                         });
                     });
-                    setFeeItems(items);
                 }
             }
 
-            // Fetch existing invoices
+            // 2. Fetch existing invoices (unpaid/partially paid)
+            let invoices = [];
             try {
                 const invRes = await axios.get(`${BASE_URL}/api/fees/invoices/${student._id}`, { headers });
-                setExistingInvoices(invRes.data || []);
+                invoices = invRes.data || [];
+                setExistingInvoices(invoices);
             } catch {
                 setExistingInvoices([]);
             }
 
-            // Fetch payment history
+            // 3. Build final fee items list:
+            //    - Show unpaid invoices first (real outstanding dues from DB)
+            //    - Then show fee structure items that haven't been invoiced yet
+            const finalItems = [];
+            const invoicedTitles = new Set();
+
+            // Add existing unpaid/partially-paid invoices as fee items
+            invoices.forEach(inv => {
+                const remaining = inv.amount - (inv.amountPaid || 0);
+                if (remaining > 0) {
+                    invoicedTitles.add(inv.title);
+                    finalItems.push({
+                        id: inv._id,
+                        name: inv.title,
+                        amount: remaining, // Show remaining balance
+                        fullAmount: inv.amount,
+                        amountPaid: inv.amountPaid || 0,
+                        dueDate: new Date(inv.dueDate),
+                        status: new Date() > new Date(inv.dueDate) ? 'Overdue' : 'Due',
+                        source: 'invoice', // From DB invoice
+                        invoiceId: inv._id,
+                        isPartial: (inv.amountPaid || 0) > 0
+                    });
+                }
+            });
+
+            // Add fee structure items that have no existing invoice
+            structureItems.forEach(item => {
+                if (!invoicedTitles.has(item.name)) {
+                    finalItems.push({
+                        id: item.id,
+                        name: item.name,
+                        amount: item.amount,
+                        fullAmount: item.amount,
+                        amountPaid: 0,
+                        frequency: item.frequency,
+                        dueDate: getDueDate(item.frequency),
+                        status: 'New',
+                        source: 'structure', // From fee structure template
+                        type: item.type
+                    });
+                }
+            });
+
+            setFeeItems(finalItems);
+
+            // 4. Fetch payment history (real transactions from DB)
             try {
-                const histRes = await axios.get(`${BASE_URL}/api/fees/student/${student._id}`, { headers });
-                const payments = histRes.data?.payments || histRes.data || [];
-                setPaymentHistory(Array.isArray(payments) ? payments.slice(0, 5) : []);
+                const txnRes = await axios.get(`${BASE_URL}/api/fees/status/${student._id}`, { headers });
+                const history = txnRes.data?.history || [];
+                setPaymentHistory(Array.isArray(history) ? history.slice(0, 5) : []);
             } catch {
                 setPaymentHistory([]);
             }
@@ -136,19 +184,16 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
 
     const getDueDate = (frequency) => {
         const now = new Date();
-        if (frequency === 'MONTHLY' || frequency === 'Monthly') {
+        if (frequency === 'MONTHLY') {
             return new Date(now.getFullYear(), now.getMonth(), 15);
         }
-        if (frequency === 'QUARTERLY' || frequency === 'Quarterly') {
+        if (frequency === 'QUARTERLY') {
             return new Date(now.getFullYear(), Math.ceil((now.getMonth() + 1) / 3) * 3, 1);
         }
-        return new Date(now.getFullYear(), 2, 31);
-    };
-
-    const getStatus = (frequency) => {
-        const due = getDueDate(frequency);
-        const now = new Date();
-        return now > due ? 'Overdue' : 'Due';
+        if (frequency === 'HALF-YEARLY') {
+            return new Date(now.getFullYear(), now.getMonth() < 6 ? 8 : 2, 1);
+        }
+        return new Date(now.getFullYear() + 1, 2, 31); // End of academic year
     };
 
     const toggleFeeItem = (id) => {
@@ -175,16 +220,26 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
             const headers = { Authorization: `Bearer ${token}` };
             const selectedItems = feeItems.filter(f => selectedFeeIds.includes(f.id));
 
+            // Step 1: Get or create invoices for each selected item
             const invoiceIds = [];
             for (const item of selectedItems) {
-                const invRes = await axios.post(`${BASE_URL}/api/fees/invoices`, {
-                    studentId: selectedStudent._id,
-                    title: item.name,
-                    amount: item.amount
-                }, { headers });
-                if (invRes.data.invoice?._id) invoiceIds.push(invRes.data.invoice._id);
+                if (item.source === 'invoice' && item.invoiceId) {
+                    // Already has an invoice in DB — just pay it
+                    invoiceIds.push(item.invoiceId);
+                } else {
+                    // Fee from structure — create a new invoice first
+                    const invRes = await axios.post(`${BASE_URL}/api/fees/invoices`, {
+                        studentId: selectedStudent._id,
+                        title: item.name,
+                        amount: item.fullAmount || item.amount
+                    }, { headers });
+                    if (invRes.data.invoice?._id) {
+                        invoiceIds.push(invRes.data.invoice._id);
+                    }
+                }
             }
 
+            // Step 2: Process cart payment against all invoices
             if (invoiceIds.length > 0) {
                 await axios.post(`${BASE_URL}/api/fees/pay-cart`, {
                     studentId: selectedStudent._id,
@@ -331,6 +386,7 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
                                 {feeItems.map(item => {
                                     const isSelected = selectedFeeIds.includes(item.id);
                                     const isOverdue = item.status === 'Overdue';
+                                    const isNew = item.status === 'New';
                                     return (
                                         <div
                                             key={item.id}
@@ -354,8 +410,16 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
                                                 <div className="flex items-center gap-1.5 mt-1">
                                                     <FaCalendarAlt className="text-slate-300 text-[9px]" />
                                                     <p className="text-[10px] text-slate-400 font-medium">
-                                                        Due {item.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        {item.source === 'invoice'
+                                                            ? `Due ${item.dueDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                                                            : `${item.frequency || 'Yearly'} fee`
+                                                        }
                                                     </p>
+                                                    {item.isPartial && (
+                                                        <span className="text-[9px] font-bold text-amber-500 ml-1">
+                                                            (₹{item.amountPaid} already paid)
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -365,7 +429,9 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
                                                 <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase ${
                                                     isOverdue
                                                         ? 'bg-red-50 text-red-500 border border-red-100'
-                                                        : 'bg-blue-50 text-blue-500 border border-blue-100'
+                                                        : isNew
+                                                            ? 'bg-emerald-50 text-emerald-500 border border-emerald-100'
+                                                            : 'bg-blue-50 text-blue-500 border border-blue-100'
                                                 }`}>
                                                     {item.status}
                                                 </span>
@@ -465,16 +531,11 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold text-slate-700 truncate">
-                                                    {Array.isArray(tx.monthsPaid) ? tx.monthsPaid.join(', ') : tx.title || 'Payment'}
+                                                    {Array.isArray(tx.monthsPaid) && tx.monthsPaid.length > 0 ? tx.monthsPaid.join(', ') : 'Payment'}
                                                 </p>
                                                 <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                                    {tx.date ? new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'} · {tx.paymentMethod || 'Cash'}
+                                                    {tx.date ? new Date(tx.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'} · {tx.paymentMethod || 'Cash'}
                                                 </p>
-                                                {tx.remainingBalance > 0 && (
-                                                    <p className="text-[10px] text-amber-500 font-bold mt-0.5">
-                                                        {formatCurrency(tx.remainingBalance)} balance after
-                                                    </p>
-                                                )}
                                             </div>
                                             <span className="text-sm font-black text-slate-800 shrink-0">{formatCurrency(tx.amount)}</span>
                                         </div>
