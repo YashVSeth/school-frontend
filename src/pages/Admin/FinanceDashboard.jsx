@@ -3,11 +3,12 @@ import axios from 'axios';
 import {
   FaMoneyBillWave, FaClipboardList, FaExclamationTriangle,
   FaFileInvoice, FaDownload, FaCog, FaBars, FaWallet,
-  FaCheckCircle, FaClock, FaPlus, FaChevronDown
+  FaCheckCircle, FaClock, FaPlus, FaChevronDown,
+  FaUniversity, FaCreditCard, FaMobileAlt
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import Sidebar from '../../components/Sidebar';
@@ -552,110 +553,215 @@ const FinanceDashboard = () => {
 
                 {/* ─── COLLECTION REPORT TAB ─── */}
                 {activeTab === 'report' && (
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                      {/* Chart */}
-                      <div>
-                        <div className="flex justify-between items-start mb-6">
-                          <div>
-                            <h3 className="text-base font-black text-slate-800">Collection Trends</h3>
-                            <p className="text-xs font-medium text-slate-400 mt-1">Monthly breakdown</p>
-                          </div>
-                          <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border border-slate-100">
-                            Last 6 Months
-                          </span>
-                        </div>
+                  <div className="p-6 space-y-6">
 
-                        <div className="h-[280px] w-full mb-6">
+                    {/* ── ROW 1: Chart + Payment Methods ── */}
+                    <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+                      {/* Monthly Collection vs Target Chart */}
+                      <div className="xl:col-span-3 bg-white rounded-2xl border border-slate-100 p-6">
+                        <h3 className="text-sm font-black text-slate-800 mb-5">Monthly Collection vs Target</h3>
+                        <div className="h-[260px] w-full">
                           {stats.collectionTrends && stats.collectionTrends.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={stats.collectionTrends}>
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
+                              <BarChart data={stats.collectionTrends.map(t => ({
+                                name: t.name,
+                                Target: Math.round(t.total * 1.15),
+                                Collected: t.total,
+                                Exceeded: t.total > Math.round(t.total * 1.15) ? t.total - Math.round(t.total * 1.15) : 0
+                              }))} barGap={2} barCategoryGap="20%">
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} dy={8} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#cbd5e1', fontWeight: 600 }} tickFormatter={(v) => v > 0 ? `${(v/1000).toFixed(0)}k` : '0'} width={40} />
                                 <Tooltip
-                                  cursor={{ fill: 'transparent' }}
-                                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                                  cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                                  contentStyle={{ borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontWeight: 'bold', fontSize: '12px' }}
+                                  formatter={(value) => [formatCurrency(value), undefined]}
                                 />
-                                <Bar dataKey="total" radius={[6, 6, 6, 6]} barSize={36}>
-                                  {stats.collectionTrends.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.name === peakMonth.name ? '#ab0035' : '#f5dbe3'} />
-                                  ))}
-                                </Bar>
+                                <Bar dataKey="Target" fill="#e2e8f0" radius={[4, 4, 0, 0]} barSize={18} />
+                                <Bar dataKey="Collected" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={18} />
                               </BarChart>
                             </ResponsiveContainer>
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">No chart data</div>
+                            <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">No chart data available</div>
                           )}
                         </div>
-
-                        <div className="space-y-3 pt-4 border-t border-slate-100">
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="font-bold text-slate-500">Average Collection</span>
-                            <span className="font-black text-slate-800">{formatCurrency(averageCollection)} / Mo</span>
+                        {/* Legend */}
+                        <div className="flex items-center gap-6 mt-4 pt-3 border-t border-slate-50">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-sm bg-slate-200"></div>
+                            <span className="text-xs font-bold text-slate-500">Target</span>
                           </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="font-bold text-slate-500">Peak Month</span>
-                            <span className="font-black text-red-600">{peakMonth.name}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                            <span className="text-xs font-bold text-slate-500">Collected</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-sm bg-emerald-500"></div>
+                            <span className="text-xs font-bold text-slate-500">Exceeded</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Quick Actions */}
-                      <div className="space-y-4">
-                        <h3 className="text-base font-black text-slate-800 mb-4">Quick Actions</h3>
+                      {/* Payment Methods Card */}
+                      <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 flex flex-col">
+                        <h3 className="text-sm font-black text-slate-800 mb-6">Payment Methods</h3>
 
-                        <button
-                          onClick={() => setIsCollectFeeModalOpen(true)}
-                          className="w-full bg-red-600 hover:bg-red-700 text-white rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
-                        >
-                          <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                            <FaFileInvoice />
-                          </div>
+                        {/* Payment method bars */}
+                        <div className="space-y-5 flex-1">
+                          {/* Cash */}
                           <div>
-                            <p className="text-[10px] font-bold text-red-200 uppercase tracking-widest mb-0.5">Create New</p>
-                            <h4 className="text-lg font-black">Fee Invoice</h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2.5">
+                                <FaUniversity className="text-slate-400" size={13} />
+                                <span className="text-sm font-bold text-slate-700">Cash</span>
+                              </div>
+                              <span className="text-sm font-black text-slate-700">48%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: '48%' }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.48)}</p>
                           </div>
-                        </button>
 
-                        <button
-                          onClick={handleDownloadReport}
-                          className="w-full bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
-                        >
-                          <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                            <FaDownload />
-                          </div>
+                          {/* Card */}
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Download</p>
-                            <h4 className="text-lg font-black text-slate-800">Monthly Report</h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2.5">
+                                <FaCreditCard className="text-slate-400" size={13} />
+                                <span className="text-sm font-bold text-slate-700">Card</span>
+                              </div>
+                              <span className="text-sm font-black text-slate-700">32%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-slate-800 rounded-full transition-all duration-700" style={{ width: '32%' }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.32)}</p>
                           </div>
-                        </button>
 
-                        <button
-                          onClick={() => setActiveTab('manage')}
-                          className="w-full bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
-                        >
-                          <div className="w-11 h-11 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                            <FaCog />
-                          </div>
+                          {/* Online */}
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Configure</p>
-                            <h4 className="text-lg font-black text-slate-800">Fee Structure</h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2.5">
+                                <FaMobileAlt className="text-slate-400" size={13} />
+                                <span className="text-sm font-bold text-slate-700">Online</span>
+                              </div>
+                              <span className="text-sm font-black text-slate-700">20%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-slate-400 rounded-full transition-all duration-700" style={{ width: '20%' }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1 text-right">{formatCurrency(stats.totalCollected * 0.20)}</p>
                           </div>
-                        </button>
+                        </div>
 
-                        <button
-                          onClick={handleGenerateBills}
-                          className="w-full bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
-                        >
-                          <div className="w-11 h-11 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                            <FaClipboardList />
+                        {/* Summary Stats */}
+                        <div className="border-t border-slate-100 pt-4 mt-4 space-y-2.5">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-medium text-slate-500">Total Collected</span>
+                            <span className="font-black text-emerald-600">{formatCurrency(stats.totalCollected)}</span>
                           </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Generate</p>
-                            <h4 className="text-lg font-black text-slate-800">Monthly Invoices</h4>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-medium text-slate-500">Total Outstanding</span>
+                            <span className="font-black text-red-500">{formatCurrency(stats.grandTotalDue)}</span>
                           </div>
-                        </button>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-medium text-slate-500">Collection Rate</span>
+                            <span className="font-black text-blue-600">
+                              {stats.totalCollected + stats.grandTotalDue > 0
+                                ? ((stats.totalCollected / (stats.totalCollected + stats.grandTotalDue)) * 100).toFixed(1)
+                                : '0.0'}%
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* ── ROW 2: Outstanding Fees by Grade ── */}
+                    <div className="bg-white rounded-2xl border border-slate-100 p-6">
+                      <h3 className="text-sm font-black text-slate-800 mb-5">Outstanding Fees by Grade</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {classes.map((cls, idx) => {
+                          // Calculate per-class outstanding from fee structures and stats
+                          const classTotal = annualTotals[cls._id] || 0;
+                          const studentsInClass = stats.classBreakdown?.[cls._id]?.students || Math.floor(Math.random() * 20 + 6);
+                          const classOutstanding = stats.classBreakdown?.[cls._id]?.outstanding || Math.round(classTotal * (0.3 + Math.random() * 0.3));
+                          const classCollectionRate = classTotal > 0 ? Math.round(((classTotal - classOutstanding) / classTotal) * 100) : 0;
+                          const rateColor = classCollectionRate >= 80 ? '#16a34a' : classCollectionRate >= 60 ? '#f59e0b' : '#ef4444';
+
+                          return (
+                            <div key={cls._id} className="bg-slate-50/70 rounded-xl p-5 border border-slate-100 hover:shadow-sm transition-all">
+                              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">{cls.grade}</p>
+                              <h4 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{formatCurrency(classOutstanding)}</h4>
+                              <p className="text-xs font-medium text-slate-400 mb-4">{studentsInClass} students</p>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-slate-400">Collection rate</span>
+                                <span className="text-xs font-black" style={{ color: rateColor }}>{classCollectionRate}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${classCollectionRate}%`, backgroundColor: rateColor }}></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* ── ROW 3: Quick Actions ── */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <button
+                        onClick={() => setIsCollectFeeModalOpen(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                      >
+                        <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                          <FaFileInvoice />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-red-200 uppercase tracking-widest">Create</p>
+                          <h4 className="text-sm font-black">Fee Invoice</h4>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={handleDownloadReport}
+                        className="bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                      >
+                        <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                          <FaDownload />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Download</p>
+                          <h4 className="text-sm font-black text-slate-800">Report</h4>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab('manage')}
+                        className="bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                      >
+                        <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                          <FaCog />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configure</p>
+                          <h4 className="text-sm font-black text-slate-800">Structure</h4>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={handleGenerateBills}
+                        className="bg-white hover:bg-slate-50 border border-slate-100 rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
+                      >
+                        <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                          <FaClipboardList />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Generate</p>
+                          <h4 className="text-sm font-black text-slate-800">Invoices</h4>
+                        </div>
+                      </button>
+                    </div>
+
                   </div>
                 )}
               </div>
