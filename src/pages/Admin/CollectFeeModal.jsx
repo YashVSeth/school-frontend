@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaTimes, FaSearch, FaCheckCircle, FaMoneyBillWave, FaCreditCard, FaGlobe } from 'react-icons/fa';
+import { FaTimes, FaSearch, FaCheckCircle, FaMoneyBillWave, FaMobileAlt, FaHistory, FaExclamationCircle, FaReceipt, FaCalendarAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const ACADEMIC_MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+
+// Avatar color palette
+const AVATAR_COLORS = [
+  '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316',
+  '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'
+];
+const getAvatarColor = (name) => {
+  let hash = 0;
+  for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
 
 const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
     const BASE_URL = import.meta.env.VITE_API_URL;
@@ -14,70 +25,42 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
 
-    // Form State
-    const [category, setCategory] = useState('');
-    const [month, setMonth] = useState(ACADEMIC_MONTHS[0]);
-
-    // Amount State
-    const [baseAmount, setBaseAmount] = useState('0.00');
-    const [discount, setDiscount] = useState('0.00');
-    const [amountToPay, setAmountToPay] = useState('0.00');
-
-    // Fee Maps 
-    const [feeStructureMap, setFeeStructureMap] = useState({});
+    // Fee Items State
+    const [feeItems, setFeeItems] = useState([]);
+    const [selectedFeeIds, setSelectedFeeIds] = useState([]);
     const [existingInvoices, setExistingInvoices] = useState([]);
 
     // Payment State
     const [paymentMode, setPaymentMode] = useState('Cash');
-    const [printReceipt, setPrintReceipt] = useState(true);
     const [processing, setProcessing] = useState(false);
-
-    // History
-    const [lastTxn, setLastTxn] = useState(null);
+    const [paymentHistory, setPaymentHistory] = useState([]);
 
     useEffect(() => {
         if (!isOpen) {
             resetForm();
-        } else {
-            fetchLastTxn();
-            fetchAvailableFees();
         }
     }, [isOpen]);
-
-    // Derived Amounts
-    const totalToPay = Math.max(0, parseFloat(baseAmount || 0) - parseFloat(discount || 0));
-    const remainingBalance = Math.max(0, totalToPay - parseFloat(amountToPay || 0));
 
     const resetForm = () => {
         setSearchQuery('');
         setSearchResults([]);
         setSelectedStudent(null);
-        setCategory('');
-        setMonth(ACADEMIC_MONTHS[0]);
-        setBaseAmount('0.00');
-        setDiscount('0.00');
-        setAmountToPay('0.00');
-        setPaymentMode('Cash');
-        setFeeStructureMap({});
+        setFeeItems([]);
+        setSelectedFeeIds([]);
         setExistingInvoices([]);
-    };
-
-    const fetchLastTxn = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${BASE_URL}/api/fees/global-stats`, { headers: { Authorization: `Bearer ${token}` } });
-            if (res.data.recentTransactions && res.data.recentTransactions.length > 0) {
-                setLastTxn(res.data.recentTransactions[0]);
-            }
-        } catch (e) {
-            console.error(e);
-        }
+        setPaymentMode('Cash');
+        setPaymentHistory([]);
     };
 
     const handleSearch = async (e) => {
         const query = e.target.value;
         setSearchQuery(query);
-        setSelectedStudent(null);
+        if (selectedStudent && query !== `${selectedStudent.firstName} ${selectedStudent.lastName}`) {
+            setSelectedStudent(null);
+            setFeeItems([]);
+            setSelectedFeeIds([]);
+            setPaymentHistory([]);
+        }
 
         if (query.length < 2) {
             setSearchResults([]);
@@ -91,127 +74,149 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSearchResults(res.data.students || res.data);
-        } catch (error) {
-            console.error("Search failed");
+        } catch {
+            // silent
         } finally {
             setIsSearching(false);
         }
     };
 
-    const fetchAvailableFees = async () => {
-        // You could pre-fetch all or just when student clicked. 
+    const clearStudent = () => {
+        setSelectedStudent(null);
+        setSearchQuery('');
+        setFeeItems([]);
+        setSelectedFeeIds([]);
+        setPaymentHistory([]);
+        setExistingInvoices([]);
     };
 
     const selectStudent = async (student) => {
         setSelectedStudent(student);
-        setSearchQuery(`${student.firstName} ${student.lastName} (${student.studentId})`);
+        setSearchQuery(`${student.firstName} ${student.lastName}`);
         setSearchResults([]);
 
-        // Fetch their Class Fee Structure
         try {
             const token = localStorage.getItem('token');
+            const headers = { Authorization: `Bearer ${token}` };
             const classId = student.class?._id || student.class;
-            if (!classId) return;
 
-            const res = await axios.get(`${BASE_URL}/api/fee-structure/${classId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (res.data) {
-                // Map out all the fees by name so changing dropdown alters Base Amount
-                const map = {};
-                res.data.mandatoryFees?.forEach(f => map[f.name] = f.amount);
-                res.data.optionalFees?.forEach(f => map[f.name] = f.amount);
-                setFeeStructureMap(map);
-
-                // Automatically attempt to match current category or set first one
-                const availableKeys = Object.keys(map);
-                const firstKey = availableKeys.length > 0 ? availableKeys[0] : '';
-
-                const matchedAmount = map[category] || map[firstKey];
-
-                if (firstKey && !map[category]) {
-                    setCategory(firstKey);
-                }
-
-                if (matchedAmount !== undefined) {
-                    setBaseAmount(matchedAmount.toFixed(2));
-                    setAmountToPay(matchedAmount.toFixed(2));
-                } else {
-                    // Fallback to total or 0
-                    setBaseAmount('0.00');
-                    setAmountToPay('0.00');
+            // Fetch fee structure
+            if (classId) {
+                const res = await axios.get(`${BASE_URL}/api/fee-structure/${classId}`, { headers });
+                if (res.data) {
+                    const items = [];
+                    (res.data.mandatoryFees || []).forEach((f, i) => {
+                        items.push({
+                            id: f._id || `m-${i}`,
+                            name: f.name,
+                            amount: f.amount,
+                            frequency: f.frequency,
+                            type: 'mandatory',
+                            dueDate: getDueDate(f.frequency),
+                            status: getStatus(f.frequency)
+                        });
+                    });
+                    (res.data.optionalFees || []).forEach((f, i) => {
+                        items.push({
+                            id: f._id || `o-${i}`,
+                            name: f.name,
+                            amount: f.amount,
+                            frequency: f.frequency,
+                            type: 'optional',
+                            dueDate: getDueDate(f.frequency),
+                            status: getStatus(f.frequency)
+                        });
+                    });
+                    setFeeItems(items);
                 }
             }
 
-            // Fetch existing invoices for the student to check for partial payments
-            const invRes = await axios.get(`${BASE_URL}/api/fees/invoices/${student._id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setExistingInvoices(invRes.data || []);
+            // Fetch existing invoices
+            try {
+                const invRes = await axios.get(`${BASE_URL}/api/fees/invoices/${student._id}`, { headers });
+                setExistingInvoices(invRes.data || []);
+            } catch {
+                setExistingInvoices([]);
+            }
 
-        } catch (error) {
-            console.error("Failed to fetch struct", error);
+            // Fetch payment history
+            try {
+                const histRes = await axios.get(`${BASE_URL}/api/fees/student/${student._id}`, { headers });
+                const payments = histRes.data?.payments || histRes.data || [];
+                setPaymentHistory(Array.isArray(payments) ? payments.slice(0, 5) : []);
+            } catch {
+                setPaymentHistory([]);
+            }
+
+        } catch {
+            toast.error("Failed to load student data");
         }
     };
 
-    // Listen to Category Changes
-    useEffect(() => {
-        const titleToLookFor = `${month} ${category}`;
-        const existingInvoice = existingInvoices.find(inv => inv.title === titleToLookFor);
-
-        if (existingInvoice) {
-            // Already generated, show remaining balance
-            const remaining = existingInvoice.amount - existingInvoice.amountPaid;
-            setBaseAmount(remaining.toFixed(2));
-            setAmountToPay(remaining.toFixed(2));
-        } else if (feeStructureMap[category] !== undefined) {
-            // New invoice
-            setBaseAmount(feeStructureMap[category].toFixed(2));
-            setAmountToPay(feeStructureMap[category].toFixed(2));
-        } else {
-            setBaseAmount('0.00');
-            setAmountToPay('0.00');
+    const getDueDate = (frequency) => {
+        const now = new Date();
+        if (frequency === 'MONTHLY' || frequency === 'Monthly') {
+            return new Date(now.getFullYear(), now.getMonth(), 15);
         }
-    }, [category, month, feeStructureMap, existingInvoices]);
+        if (frequency === 'QUARTERLY' || frequency === 'Quarterly') {
+            return new Date(now.getFullYear(), Math.ceil((now.getMonth() + 1) / 3) * 3, 1);
+        }
+        return new Date(now.getFullYear(), 2, 31); // End of academic year
+    };
+
+    const getStatus = (frequency) => {
+        const due = getDueDate(frequency);
+        const now = new Date();
+        return now > due ? 'Overdue' : 'Due';
+    };
+
+    const toggleFeeItem = (id) => {
+        setSelectedFeeIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const selectedTotal = feeItems
+        .filter(f => selectedFeeIds.includes(f.id))
+        .reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    const totalOutstanding = feeItems.reduce((sum, f) => sum + (f.amount || 0), 0);
+
+    const formatCurrency = (amount) => '₹' + new Intl.NumberFormat('en-IN').format(amount || 0);
 
     const handleProcessPayment = async () => {
         if (!selectedStudent) return toast.error("Please select a student first.");
-        const payAmount = parseFloat(amountToPay);
-        if (isNaN(payAmount) || payAmount <= 0) return toast.error("Invalid payment amount.");
+        if (selectedFeeIds.length === 0) return toast.error("Please select at least one fee item.");
 
         setProcessing(true);
         try {
             const token = localStorage.getItem('token');
+            const headers = { Authorization: `Bearer ${token}` };
+            const selectedItems = feeItems.filter(f => selectedFeeIds.includes(f.id));
 
-            // 1. Generate an invoice internally targeting this month
-            const invRes = await axios.post(`${BASE_URL}/api/fees/invoices`, {
-                studentId: selectedStudent._id,
-                title: `${month} ${category}`,
-                amount: totalToPay
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            // Create invoices and pay for each selected item
+            const invoiceIds = [];
+            for (const item of selectedItems) {
+                const invRes = await axios.post(`${BASE_URL}/api/fees/invoices`, {
+                    studentId: selectedStudent._id,
+                    title: item.name,
+                    amount: item.amount
+                }, { headers });
+                if (invRes.data.invoice?._id) invoiceIds.push(invRes.data.invoice._id);
+            }
 
-            const invoiceId = invRes.data.invoice?._id;
-
-            // 2. Process cart payment against it
-            if (invoiceId) {
+            if (invoiceIds.length > 0) {
                 await axios.post(`${BASE_URL}/api/fees/pay-cart`, {
                     studentId: selectedStudent._id,
-                    amountPaid: payAmount,
+                    amountPaid: selectedTotal,
                     paymentMethod: paymentMode,
-                    invoicesToPay: [invoiceId]
-                }, { headers: { Authorization: `Bearer ${token}` } });
+                    invoicesToPay: invoiceIds
+                }, { headers });
             }
 
             toast.success("Payment Processed Successfully!");
             if (onPaymentSuccess) onPaymentSuccess();
             onClose();
-
-            if (printReceipt) {
-                // Trigger hypothetical print logic
-                toast.info("Receipt printing...");
-            }
-
         } catch (error) {
             const errorMessage = error.response?.data?.message || "Failed to process payment";
             toast.error(errorMessage);
@@ -222,224 +227,303 @@ const CollectFeeModal = ({ isOpen, onClose, onPaymentSuccess }) => {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
-            <div className="bg-white w-full max-w-3xl rounded-[24px] overflow-hidden flex flex-col shadow-2xl animate-slide-up max-h-[90vh] relative">
+    const initials = selectedStudent
+        ? `${selectedStudent.firstName?.charAt(0) || ''}${selectedStudent.lastName?.charAt(0) || ''}`.toUpperCase()
+        : '';
+    const avatarColor = selectedStudent ? getAvatarColor(selectedStudent.firstName + selectedStudent.lastName) : '#94a3b8';
 
-                {/* Free Floating Close Button */}
+    return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div className="bg-[#f8f9fb] w-full max-w-5xl rounded-[20px] overflow-hidden flex flex-col shadow-2xl max-h-[92vh] relative" style={{ animation: 'fadeInUp 0.3s ease-out' }}>
+
+                {/* Close Button */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 z-50 p-2 text-slate-400 hover:text-red-600 bg-white hover:bg-red-50 rounded-full shadow-sm border border-slate-100 transition-all"
                 >
-                    <FaTimes size={18} />
+                    <FaTimes size={16} />
                 </button>
 
-                {/* Header Strip - EduPay Manager Header mapping to standard App structure */}
-                <div className="bg-[#fcfafa] px-6 py-4 border-b border-slate-100 flex items-center gap-3 shrink-0">
-                    <div className="bg-[#800000] text-white p-1.5 rounded-md">
-                        <FaMoneyBillWave size={14} />
-                    </div>
-                    <h2 className="text-[#800000] font-black tracking-tight text-base">EduPay Manager</h2>
+                {/* Header */}
+                <div className="px-8 py-6 bg-white border-b border-slate-100 shrink-0">
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Record Payment</h1>
+                    <p className="text-sm font-medium text-slate-400 mt-1">Collect full or partial fee payments from students</p>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar bg-white">
+                {/* Body - Two Column Layout */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 p-6">
 
-                    {/* Modal Title */}
-                    <div className="mb-8 border-b border-slate-100 pb-6">
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Collect Fee</h1>
-                        <p className="text-sm font-medium text-slate-500 mt-2">Generate invoices and process student fee payments securely.</p>
-                    </div>
+                        {/* ═══════ LEFT COLUMN ═══════ */}
+                        <div className="lg:col-span-3 space-y-5">
 
-                    {/* SEARCH STUDENT */}
-                    <div className="mb-8 relative">
-                        <label className="text-[11px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Search Student</label>
-                        <div className="relative">
-                            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#c28b8b] text-sm" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={handleSearch}
-                                placeholder="Enter Student Name or Admission ID (e.g. ADM-2024-001)"
-                                className="w-full pl-11 pr-4 py-4 bg-[#f2eaea] rounded-xl text-[#7a8599] font-bold placeholder-[#a7afbf] outline-none focus:ring-2 focus:ring-[#800000]/20 transition-all border border-transparent"
-                            />
+                            {/* Step 1: Select Student */}
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-black flex items-center justify-center">1</div>
+                                    <h3 className="text-sm font-black text-slate-800">Select Student</h3>
+                                </div>
+
+                                {/* Search */}
+                                <div className="relative mb-3">
+                                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-sm" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={handleSearch}
+                                        placeholder="Search by name or student ID..."
+                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 rounded-xl text-slate-700 font-bold placeholder-slate-300 outline-none focus:ring-2 focus:ring-blue-100 transition-all border border-slate-100 text-sm"
+                                    />
+                                    {selectedStudent && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-full text-white text-[10px] font-black flex items-center justify-center" style={{ backgroundColor: avatarColor }}>
+                                                {initials}
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-700">{selectedStudent.firstName} {selectedStudent.lastName}</span>
+                                            <button onClick={clearStudent} className="text-slate-300 hover:text-red-500 ml-1">
+                                                <FaTimes size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Dropdown */}
+                                    {searchResults.length > 0 && !selectedStudent && (
+                                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-100 max-h-52 overflow-y-auto z-20 p-1.5">
+                                            {searchResults.map(student => {
+                                                const sInitials = `${student.firstName?.charAt(0) || ''}${student.lastName?.charAt(0) || ''}`.toUpperCase();
+                                                const sColor = getAvatarColor(student.firstName + student.lastName);
+                                                return (
+                                                    <div
+                                                        key={student._id}
+                                                        onClick={() => selectStudent(student)}
+                                                        className="p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer flex items-center gap-3 transition-colors"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full text-white text-[10px] font-black flex items-center justify-center shrink-0" style={{ backgroundColor: sColor }}>
+                                                            {sInitials}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-slate-800 text-sm">{student.firstName} {student.lastName}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold">{student.studentId} · {student.class?.grade || ''}</p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    {isSearching && searchResults.length === 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-lg border border-slate-100 p-4 text-center text-sm font-bold text-slate-400 z-20">
+                                            Searching...
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Selected Student Card */}
+                                {selectedStudent && (
+                                    <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-4 border border-slate-100">
+                                        <div className="w-11 h-11 rounded-full text-white font-black text-sm flex items-center justify-center shrink-0" style={{ backgroundColor: avatarColor }}>
+                                            {initials}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-black text-slate-800">{selectedStudent.firstName} {selectedStudent.lastName}</p>
+                                            <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                                {selectedStudent.studentId} · {selectedStudent.class?.grade || 'N/A'} · Guardian: {selectedStudent.fatherName || 'N/A'}
+                                            </p>
+                                        </div>
+                                        {selectedStudent.email && (
+                                            <span className="text-xs text-blue-500 font-medium hidden md:block">{selectedStudent.email}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Step 2: Select Fee Items */}
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center ${selectedStudent ? 'bg-purple-500' : 'bg-slate-300'}`}>2</div>
+                                    <h3 className="text-sm font-black text-slate-800">Select Fee Items</h3>
+                                </div>
+
+                                {!selectedStudent ? (
+                                    <div className="py-8 text-center text-slate-300 text-sm font-bold">
+                                        Select a student first to view fee items
+                                    </div>
+                                ) : feeItems.length === 0 ? (
+                                    <div className="py-8 text-center text-slate-300 text-sm font-bold">
+                                        No fee items found for this student's grade
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2.5">
+                                        {feeItems.map(item => {
+                                            const isSelected = selectedFeeIds.includes(item.id);
+                                            const isOverdue = item.status === 'Overdue';
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => toggleFeeItem(item.id)}
+                                                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                                        isSelected
+                                                            ? 'border-blue-200 bg-blue-50/40'
+                                                            : 'border-slate-100 bg-white hover:border-slate-200'
+                                                    }`}
+                                                >
+                                                    {/* Checkbox */}
+                                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                                                        isSelected ? 'bg-blue-500 border-blue-500' : 'border-slate-200'
+                                                    }`}>
+                                                        {isSelected && <FaCheckCircle className="text-white text-[10px]" />}
+                                                    </div>
+
+                                                    {/* Info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-slate-800 text-sm">{item.name}</p>
+                                                        <div className="flex items-center gap-1.5 mt-1">
+                                                            <FaCalendarAlt className="text-slate-300 text-[9px]" />
+                                                            <p className="text-[10px] text-slate-400 font-medium">
+                                                                Due {item.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Amount + Status */}
+                                                    <div className="text-right shrink-0">
+                                                        <p className="font-black text-slate-800 text-sm">{formatCurrency(item.amount)}</p>
+                                                        <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase ${
+                                                            isOverdue
+                                                                ? 'bg-red-50 text-red-500 border border-red-100'
+                                                                : 'bg-blue-50 text-blue-500 border border-blue-100'
+                                                        }`}>
+                                                            {item.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Step 3: Payment Mode + Confirm */}
+                            {selectedFeeIds.length > 0 && (
+                                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-black flex items-center justify-center">3</div>
+                                        <h3 className="text-sm font-black text-slate-800">Payment Mode</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 mb-5">
+                                        {[
+                                            { id: 'Cash', icon: FaMoneyBillWave, label: 'Cash' },
+                                            { id: 'Online', icon: FaMobileAlt, label: 'Online' }
+                                        ].map(mode => (
+                                            <button
+                                                key={mode.id}
+                                                onClick={() => setPaymentMode(mode.id)}
+                                                className={`flex items-center justify-center gap-3 py-4 rounded-xl border-2 transition-all ${paymentMode === mode.id
+                                                    ? 'border-emerald-300 bg-emerald-50 shadow-sm'
+                                                    : 'border-slate-100 bg-white hover:border-slate-200'
+                                                }`}
+                                            >
+                                                <mode.icon className={`text-lg ${paymentMode === mode.id ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                                <span className={`font-black text-sm ${paymentMode === mode.id ? 'text-emerald-700' : 'text-slate-600'}`}>
+                                                    {mode.label}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={handleProcessPayment}
+                                        disabled={processing}
+                                        className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/20 disabled:opacity-70 text-sm tracking-wide"
+                                    >
+                                        <FaCheckCircle />
+                                        {processing ? 'Processing...' : `Confirm Payment — ${formatCurrency(selectedTotal)}`}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Dropdown Results */}
-                        {searchResults.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 max-h-64 overflow-y-auto z-20 p-2">
-                                {searchResults.map(student => (
-                                    <div
-                                        key={student._id}
-                                        onClick={() => selectStudent(student)}
-                                        className="p-3 hover:bg-[#F2EBEC] rounded-lg cursor-pointer flex items-center gap-3 transition-colors"
-                                    >
-                                        <div className="w-8 h-8 bg-white border border-[#800000]/20 text-[#800000] rounded-full flex items-center justify-center font-bold text-xs shrink-0">
-                                            {student.firstName.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-slate-800 text-sm">{student.firstName} {student.lastName}</p>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{student.studentId}</p>
+                        {/* ═══════ RIGHT COLUMN ═══════ */}
+                        <div className="lg:col-span-2 space-y-5">
+
+                            {/* Payment Summary */}
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <FaReceipt className="text-blue-500" />
+                                    <h3 className="text-sm font-black text-slate-800">Payment Summary</h3>
+                                </div>
+
+                                {selectedFeeIds.length === 0 ? (
+                                    <p className="text-center text-slate-300 text-sm font-medium py-6">No fee items selected</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {feeItems.filter(f => selectedFeeIds.includes(f.id)).map(item => (
+                                            <div key={item.id} className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-slate-600">{item.name}</span>
+                                                <span className="text-sm font-black text-slate-800">{formatCurrency(item.amount)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="border-t border-slate-100 pt-3 flex justify-between items-center">
+                                            <span className="text-sm font-black text-slate-800">Total</span>
+                                            <span className="text-lg font-black text-emerald-600">{formatCurrency(selectedTotal)}</span>
                                         </div>
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        )}
-                        {isSearching && searchResults.length === 0 && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-slate-100 p-4 text-center text-sm font-bold text-slate-400 z-20">
-                                Searching...
-                            </div>
-                        )}
-                    </div>
 
-                    {/* CATEGORY & MONTH */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Fee Category</label>
-                            <select
-                                value={category} onChange={(e) => setCategory(e.target.value)}
-                                className="w-full px-4 py-3.5 bg-[#f8f8fb] border border-slate-200 rounded-xl text-[#1e293b] font-bold outline-none focus:border-[#800000]/30 transition-all cursor-pointer"
-                            >
-                                <option value="" disabled>Select Category</option>
-                                {/* Combine static categories with dynamically pulled struct map keys */}
-                                {Object.keys(feeStructureMap).map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Month / Quarter</label>
-                            <select
-                                value={month} onChange={(e) => setMonth(e.target.value)}
-                                className="w-full px-4 py-3.5 bg-[#f8f8fb] border border-slate-200 rounded-xl text-[#1e293b] font-bold outline-none focus:border-[#800000]/30 transition-all cursor-pointer"
-                            >
-                                {ACADEMIC_MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
-                            </select>
-                        </div>
-                    </div>
+                            {/* Payment History */}
+                            {selectedStudent && (
+                                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                                    <div className="flex items-center gap-2.5 mb-4">
+                                        <FaHistory className="text-teal-500" />
+                                        <h3 className="text-sm font-black text-slate-800">Payment History</h3>
+                                    </div>
 
-                    {/* AMOUNTS ROW 1 */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Base Amount</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#8fa0b5]">₹</span>
-                                <input
-                                    type="text" value={baseAmount} readOnly
-                                    className="w-full pl-8 pr-4 py-3.5 border border-slate-100 bg-[#f4f7fb] text-[#1e293b] rounded-xl font-bold outline-none"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Discount</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#8fa0b5]">₹</span>
-                                <input
-                                    type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} min="0"
-                                    className="w-full pl-8 pr-4 py-3.5 bg-[#fefdfa] border border-slate-100 rounded-xl text-[#1e293b] font-bold outline-none focus:border-amber-300 transition-all"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Total To Pay</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#8fa0b5]">₹</span>
-                                <input
-                                    type="text" value={totalToPay.toFixed(2)} readOnly
-                                    className="w-full pl-8 pr-4 py-3.5 border border-slate-100 bg-[#f4f7fb] text-[#1e293b] rounded-xl font-bold outline-none"
-                                />
-                            </div>
+                                    {paymentHistory.length === 0 ? (
+                                        <p className="text-center text-slate-300 text-sm font-medium py-4">No payment history</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {paymentHistory.map((tx, idx) => (
+                                                <div key={tx._id || idx} className="flex items-start gap-3">
+                                                    <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <FaCheckCircle size={10} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-bold text-slate-700 truncate">
+                                                            {Array.isArray(tx.monthsPaid) ? tx.monthsPaid.join(', ') : tx.title || 'Payment'}
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                                            {tx.date ? new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'} · {tx.paymentMethod || 'Cash'}
+                                                        </p>
+                                                        {tx.remainingBalance > 0 && (
+                                                            <p className="text-[10px] text-amber-500 font-bold mt-0.5">
+                                                                {formatCurrency(tx.remainingBalance)} balance after
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-sm font-black text-slate-800 shrink-0">{formatCurrency(tx.amount)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Outstanding Overview */}
+                            {selectedStudent && (
+                                <div className="bg-amber-50 rounded-2xl border border-amber-100 p-5">
+                                    <div className="flex items-center gap-2.5 mb-3">
+                                        <FaExclamationCircle className="text-amber-500" />
+                                        <h3 className="text-sm font-black text-slate-800">Outstanding Overview</h3>
+                                    </div>
+                                    <p className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(totalOutstanding)}</p>
+                                    <p className="text-xs font-medium text-slate-500 mt-0.5">total outstanding</p>
+                                    <p className="text-xs font-bold text-amber-600 mt-2">{feeItems.length} fee items pending</p>
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    {/* AMOUNTS ROW 2 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 w-full md:w-[65%] pr-3">
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Amount To Pay</label>
-                            <div className="relative">
-                                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-[#7a1717] text-lg">₹</span>
-                                <input
-                                    type="number" value={amountToPay} onChange={(e) => setAmountToPay(e.target.value)} min="0"
-                                    className="w-full pl-10 pr-4 py-4 bg-[#f9elel] bg-[#faf0f1] border border-[#f0d4d6] rounded-xl text-[#7a1717] text-lg font-black outline-none focus:ring-2 focus:ring-[#800000]/20 transition-all"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-3 block">Remaining Balance</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#8fa0b5]">₹</span>
-                                <input
-                                    type="text" value={remainingBalance.toFixed(2)} readOnly
-                                    className="w-full pl-8 pr-4 py-4 border border-slate-100 bg-[#f4f7fb] text-[#8fa0b5] rounded-xl font-bold outline-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* PAYMENT MODE */}
-                    <div className="mb-10 border-t border-slate-100 pt-8">
-                        <label className="text-[10px] font-extrabold text-[#7a1717] tracking-wider uppercase mb-4 block">Payment Mode</label>
-                        <div className="grid grid-cols-3 gap-4">
-                            {[
-                                { id: 'Cash', icon: FaMoneyBillWave },
-                                { id: 'Card', icon: FaCreditCard },
-                                { id: 'Online', icon: FaGlobe }
-                            ].map(mode => (
-                                <button
-                                    key={mode.id}
-                                    onClick={() => setPaymentMode(mode.id)}
-                                    className={`flex flex-col items-center justify-center py-6 rounded-xl border-2 transition-all ${paymentMode === mode.id
-                                        ? 'border-[#800000] bg-[#FFFafa] shadow-sm'
-                                        : 'border-slate-100 bg-white hover:border-slate-200'
-                                        }`}
-                                >
-                                    <mode.icon className={`text-xl mb-3 ${paymentMode === mode.id ? 'text-[#800000]' : 'text-[#800000]'}`} />
-                                    <span className={`font-black tracking-wide text-sm ${paymentMode === mode.id ? 'text-slate-900' : 'text-slate-700'}`}>
-                                        {mode.id}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* FOOTER ACTIONS */}
-                    <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row justify-between items-center gap-6 pb-2">
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printReceipt ? 'bg-[#800000]' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
-                                {printReceipt && <FaCheckCircle className="text-white text-xs" />}
-                            </div>
-                            <input type="checkbox" className="hidden" checked={printReceipt} onChange={() => setPrintReceipt(!printReceipt)} />
-                            <span className="font-bold text-slate-700 select-none tracking-tight">Print Receipt Automatically</span>
-                        </label>
-
-                        <div className="flex gap-4 w-full md:w-auto">
-                            <button
-                                onClick={onClose}
-                                className="flex-1 md:flex-none px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-[#800000] rounded-xl font-black transition-all text-sm tracking-wide"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleProcessPayment}
-                                disabled={processing}
-                                className="flex-1 md:flex-none px-8 py-4 bg-[#800000] hover:bg-[#600000] text-white rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20 disabled:opacity-70 text-sm tracking-wide"
-                            >
-                                <FaCheckCircle /> {processing ? 'Processing...' : 'Process Payment'}
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
-
-                {/* BOTTOM HISTORY STRIP */}
-                <div className="bg-[#FAF8F8] px-10 py-4 border-t border-slate-100 flex justify-between items-center shrink-0">
-                    <p className="text-xs font-bold text-slate-500 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                        Last transaction: {lastTxn?.student ? `${lastTxn.student.firstName} ${lastTxn.student.lastName}` : 'N/A'} (₹{lastTxn?.amount || 0})
-                        - {lastTxn?.date ? new Date(lastTxn.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'recently'}
-                    </p>
-                    <button className="text-[#800000] text-xs font-black uppercase tracking-wider hover:underline">
-                        View History
-                    </button>
-                </div>
-
             </div>
         </div>
     );
