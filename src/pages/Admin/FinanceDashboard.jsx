@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import Sidebar from '../../components/Sidebar';
-import CollectFeeModal from './CollectFeeModal';
+import RecordPayment from './CollectFeeModal';
 import FeeStructureManagement from './FeeStructureManagement';
 
 // ──────────── STAT CARD COMPONENT ────────────
@@ -68,7 +68,7 @@ const FinanceDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('structure');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isCollectFeeModalOpen, setIsCollectFeeModalOpen] = useState(false);
+
 
   // Fee structure data for the unified table
   const [classes, setClasses] = useState([]);
@@ -281,6 +281,8 @@ const FinanceDashboard = () => {
 
           {activeTab === 'manage' ? (
             <FeeStructureManagement onBack={() => { setActiveTab('structure'); fetchAllFeeStructures(); }} />
+          ) : activeTab === 'payment' ? (
+            <RecordPayment onBack={() => { setActiveTab('structure'); fetchStats(); }} onPaymentSuccess={fetchStats} />
           ) : (
             <>
               {/* ═══════════ PAGE HEADER ═══════════ */}
@@ -311,7 +313,7 @@ const FinanceDashboard = () => {
                     <FaDownload className="text-slate-400" /> Export
                   </button>
                   <button
-                    onClick={() => setIsCollectFeeModalOpen(true)}
+                    onClick={() => setActiveTab('payment')}
                     className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm shadow-sm hover:bg-red-700 transition-all"
                   >
                     <FaPlus /> Record Payment
@@ -695,7 +697,7 @@ const FinanceDashboard = () => {
                     {/* ── ROW 3: Quick Actions ── */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <button
-                        onClick={() => setIsCollectFeeModalOpen(true)}
+                        onClick={() => setActiveTab('payment')}
                         className="bg-red-600 hover:bg-red-700 text-white rounded-2xl p-5 shadow-sm transition-all flex items-center gap-4 text-left group"
                       >
                         <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
@@ -755,11 +757,7 @@ const FinanceDashboard = () => {
         </div>
       </div>
 
-      <CollectFeeModal
-        isOpen={isCollectFeeModalOpen}
-        onClose={() => setIsCollectFeeModalOpen(false)}
-        onPaymentSuccess={fetchStats}
-      />
+
     </div>
   );
 };
