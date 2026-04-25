@@ -3,13 +3,62 @@ import axios from 'axios';
 import {
   FaTimes, FaArrowRight, FaCheck, FaUser,
   FaGraduationCap, FaFileAlt, FaLock, FaUpload,
-  FaMagic, FaEye, FaEyeSlash
+  FaMagic, FaEye, FaEyeSlash, FaChevronDown
 } from 'react-icons/fa';
 
 const INITIAL_DATA = {
   fullName: '', gender: '', dob: '', email: '', permanentAddress: '', aadhaarNumber: '', bloodGroup: '',
   highestQualification: '', university: '', specialization: '', remarks: '', extraDuties: 'No',
   password: '', role: 'Teacher', status: 'Active', phone: ''
+};
+
+const CustomSelect = ({ options, value, onChange, placeholder, name }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        className="form-input-style w-full flex justify-between items-center cursor-pointer bg-white h-[52px]"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={`text-sm ${value ? "text-slate-700" : "text-slate-400"}`}>
+          {value || placeholder}
+        </span>
+        <FaChevronDown className={`text-slate-400 transition-transform duration-200 text-sm ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-[100] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden animate-slide-up origin-top py-2">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {options.map((opt) => (
+              <div 
+                key={opt}
+                className={`px-5 py-3 cursor-pointer text-sm font-semibold transition-all duration-200
+                  ${value === opt ? 'bg-red-50 text-red-600 border-l-2 border-red-500' : 'text-slate-600 hover:bg-slate-50 border-l-2 border-transparent hover:border-slate-300'}`}
+                onClick={() => {
+                  onChange({ target: { name, value: opt } });
+                  setIsOpen(false);
+                }}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const AddTeacherModal = ({ isOpen, onClose, onSuccess, teacherToEdit }) => {
@@ -218,12 +267,13 @@ const AddTeacherModal = ({ isOpen, onClose, onSuccess, teacherToEdit }) => {
                 <div className="space-y-4">
 
                   {/* Qualification Dropdown */}
-                  <select name="highestQualification" value={formData.highestQualification} onChange={handleChange} className="form-input-style w-full">
-                    <option value="">Select Highest Qualification</option>
-                    <option value="B.Ed">B.Ed</option><option value="M.Ed">M.Ed</option><option value="PhD">PhD</option>
-                    <option value="M.Sc">M.Sc</option><option value="M.A">M.A</option><option value="B.Tech">B.Tech</option>
-                    <option value="B.A">B.A</option><option value="B.Sc">B.Sc</option>
-                  </select>
+                  <CustomSelect 
+                    name="highestQualification"
+                    value={formData.highestQualification}
+                    onChange={handleChange}
+                    placeholder="Select Highest Qualification"
+                    options={["B.Ed", "M.Ed", "PhD", "M.Sc", "M.A", "B.Tech", "B.A", "B.Sc"]}
+                  />
 
                   {/* University */}
                   <input name="university" value={formData.university} onChange={handleChange} placeholder="University / College Name" className="form-input-style w-full" />
@@ -311,7 +361,13 @@ const AddTeacherModal = ({ isOpen, onClose, onSuccess, teacherToEdit }) => {
 
                     <div className="space-y-1 pt-2">
                       <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Account Status</label>
-                      <select name="status" value={formData.status} onChange={handleChange} className="form-input-style w-full"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+                      <CustomSelect 
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        placeholder="Select Status"
+                        options={["Active", "Inactive"]}
+                      />
                     </div>
                   </div>
                 </div>
