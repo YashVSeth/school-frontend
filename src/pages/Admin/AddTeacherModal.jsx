@@ -218,10 +218,10 @@ const AddTeacherModal = ({ isOpen, onClose, onSuccess, teacherToEdit }) => {
                 <div className="space-y-4">
 
                   {/* Qualification Dropdown */}
-                  <select name="highestQualification" value={formData.highestQualification} onChange={handleChange} className="form-input-style w-full appearance-none">
+                  <select name="highestQualification" value={formData.highestQualification} onChange={handleChange} className="form-input-style w-full">
                     <option value="">Select Highest Qualification</option>
                     <option value="B.Ed">B.Ed</option><option value="M.Ed">M.Ed</option><option value="PhD">PhD</option>
-                    <option value="M.Sc">M.Sc</option><option value="M.A">M.A</option><option value="B.Tech">B.Tech</option>
+                    <option value="M.Sc">M.Sc</option><option value="M.A">M.A</option><option value="B.Tech">B.Tech</option><option value="B.A">B.A</option>
                   </select>
 
                   {/* University */}
