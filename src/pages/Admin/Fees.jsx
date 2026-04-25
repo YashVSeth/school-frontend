@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Sidebar from '../../components/Sidebar';
+import TransportModal from './TransportModal';
 
 const FREQUENCIES = ['Monthly', 'Quarterly', 'Yearly', 'One-time'];
 
@@ -15,6 +16,7 @@ const Fees = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isTransportModalOpen, setIsTransportModalOpen] = useState(false);
 
   const [mandatoryFees, setMandatoryFees] = useState([]);
   const [optionalFees, setOptionalFees] = useState([]);
@@ -169,7 +171,10 @@ const Fees = () => {
           </div>
 
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-all">
+            <button 
+              onClick={() => setIsTransportModalOpen(true)}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-all"
+            >
               <FaBus className="text-slate-400" /> Transport
             </button>
             <button
@@ -367,6 +372,11 @@ const Fees = () => {
           </div>
         </div>
       </div>
+      
+      <TransportModal
+        isOpen={isTransportModalOpen}
+        onClose={() => setIsTransportModalOpen(false)}
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FaTrash, FaCheckCircle, FaRegSave, FaBus, FaArrowLeft, FaPlusCircle } from 'react-icons/fa';
 import AddFeeTypeModal from './AddFeeTypeModal';
+import TransportModal from './TransportModal';
 
 const FeeStructureManagement = ({ onBack }) => {
     const [classes, setClasses] = useState([]);
@@ -11,6 +12,7 @@ const FeeStructureManagement = ({ onBack }) => {
     const [saving, setSaving] = useState(false);
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isTransportModalOpen, setIsTransportModalOpen] = useState(false);
     const [activeSection, setActiveSection] = useState('mandatory'); // 'mandatory' or 'optional'
 
     const [mandatoryFees, setMandatoryFees] = useState([]);
@@ -136,7 +138,10 @@ const FeeStructureManagement = ({ onBack }) => {
                     <p className="text-slate-500 font-medium ml-[46px]">Configure and manage fee categories for the Academic Year <span className="text-[#800000] font-black tracking-widest">2026-27</span>.</p>
                 </div>
                 <div className="flex gap-3 ml-[46px] md:ml-0">
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-800 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+                    <button 
+                        onClick={() => setIsTransportModalOpen(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-800 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+                    >
                         <FaBus className="text-slate-400" /> Transport
                     </button>
                     <button
@@ -336,6 +341,11 @@ const FeeStructureManagement = ({ onBack }) => {
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSave={handleAddFee}
+            />
+
+            <TransportModal
+                isOpen={isTransportModalOpen}
+                onClose={() => setIsTransportModalOpen(false)}
             />
         </div>
     );
