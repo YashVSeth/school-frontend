@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaTrash, FaCheckCircle, FaRegSave, FaCopy, FaArrowLeft, FaPlusCircle } from 'react-icons/fa';
+import { FaTrash, FaCheckCircle, FaRegSave, FaBus, FaArrowLeft, FaPlusCircle } from 'react-icons/fa';
 import AddFeeTypeModal from './AddFeeTypeModal';
 
 const FeeStructureManagement = ({ onBack }) => {
@@ -137,7 +137,7 @@ const FeeStructureManagement = ({ onBack }) => {
                 </div>
                 <div className="flex gap-3 ml-[46px] md:ml-0">
                     <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-800 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
-                        <FaCopy className="text-slate-400" /> Copy to Grade...
+                        <FaBus className="text-slate-400" /> Transport
                     </button>
                     <button
                         onClick={handleSaveStructure}

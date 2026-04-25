@@ -170,7 +170,7 @@ const Fees = () => {
 
           <div className="flex gap-3">
             <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-all">
-              <FaCopy className="text-slate-400" /> Copy to Grade...
+              <FaBus className="text-slate-400" /> Transport
             </button>
             <button
               onClick={handleSave} disabled={saving}
