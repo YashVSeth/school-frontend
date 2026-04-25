@@ -1,10 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaTrash, FaChalkboardTeacher, FaLayerGroup } from 'react-icons/fa';
+import { FaTrash, FaChalkboardTeacher, FaLayerGroup, FaChevronDown } from 'react-icons/fa';
 import Layout from '../../components/Layout';
 import ClassDetailsModal from './ClassDetailsModal';
+
+const CustomSelect = ({ options, value, onChange, placeholder, name }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        className="w-full border p-2.5 rounded-lg flex justify-between items-center cursor-pointer bg-white"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={`text-sm ${value ? "text-slate-700" : "text-slate-400"}`}>
+          {value || placeholder}
+        </span>
+        <FaChevronDown className={`text-slate-400 transition-transform duration-200 text-sm ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-[100] w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden animate-slide-up origin-top py-2">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {options.map((opt) => (
+              <div 
+                key={opt}
+                className={`px-4 py-2 cursor-pointer text-sm font-semibold transition-all duration-200
+                  ${value === opt ? 'bg-red-50 text-red-600 border-l-2 border-red-500' : 'text-slate-600 hover:bg-slate-50 border-l-2 border-transparent hover:border-slate-300'}`}
+                onClick={() => {
+                  onChange({ target: { name, value: opt } });
+                  setIsOpen(false);
+                }}
+              >
+                {opt}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Classes = () => {
   const [classes, setClasses] = useState([]);
@@ -90,14 +139,20 @@ const Classes = () => {
             </h2>
             <form onSubmit={handleAddClass} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <select name="grade" value={classForm.grade} onChange={(e) => setClassForm({ ...classForm, grade: e.target.value })} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-white" required>
-                  <option value="">Grade</option>
-                  {gradeOptions.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-                <select name="section" value={classForm.section} onChange={(e) => setClassForm({ ...classForm, section: e.target.value })} className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-white" required>
-                  <option value="">Section</option>
-                  {sectionOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <CustomSelect
+                  name="grade"
+                  value={classForm.grade}
+                  onChange={(e) => setClassForm({ ...classForm, grade: e.target.value })}
+                  placeholder="Grade"
+                  options={gradeOptions}
+                />
+                <CustomSelect
+                  name="section"
+                  value={classForm.section}
+                  onChange={(e) => setClassForm({ ...classForm, section: e.target.value })}
+                  placeholder="Section"
+                  options={sectionOptions}
+                />
               </div>
 
               <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition active:scale-95 shadow-lg shadow-red-200">Add Class</button>
