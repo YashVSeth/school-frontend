@@ -166,6 +166,25 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
                 }
             });
 
+            // Add student-specific transport fee if applicable
+            if (student.feeDetails?.isUsingTransport) {
+                const transportName = `Transport (${student.feeDetails.transportRoute || 'Facility'})`;
+                if (!invoicedTitles.has(transportName)) {
+                    finalItems.push({
+                        id: 'transport-fee',
+                        name: transportName,
+                        amount: student.feeDetails.transportFee || 0,
+                        fullAmount: student.feeDetails.transportFee || 0,
+                        amountPaid: 0,
+                        frequency: 'MONTHLY',
+                        dueDate: getDueDate('MONTHLY'),
+                        status: 'New',
+                        source: 'structure',
+                        type: 'optional'
+                    });
+                }
+            }
+
             setFeeItems(finalItems);
 
             // 4. Fetch payment history (real transactions from DB)
