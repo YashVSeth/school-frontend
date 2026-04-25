@@ -108,8 +108,7 @@ const AddTeacherModal = ({ isOpen, onClose, onSuccess, teacherToEdit }) => {
         // Edit Existing Teacher
         await axios.put(`${BASE_URL}/api/teachers/${teacherToEdit._id}`, dataToSend, {
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            Authorization: `Bearer ${token}`
           }
         });
 
@@ -121,8 +120,7 @@ const AddTeacherModal = ({ isOpen, onClose, onSuccess, teacherToEdit }) => {
         // 🆕 Create Brand New Teacher
         await axios.post(`${BASE_URL}/api/teachers`, dataToSend, {
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            Authorization: `Bearer ${token}`
           }
         });
 
