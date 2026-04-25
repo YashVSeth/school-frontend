@@ -24,6 +24,7 @@ const InputField = ({ label, name, type = "text", value, onChange, placeholder, 
 
 const AddStudent = () => {
   const [classes, setClasses] = useState([]);
+  const [transportRoutes, setTransportRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -41,12 +42,17 @@ const AddStudent = () => {
     previousSchool: '',
     height: '', weight: '',
     whatsappEnabled: true,
-    isUsingTransport: false
+    isUsingTransport: false,
+    transportRoute: '',
+    transportFee: 0
   });
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  useEffect(() => { fetchClasses(); }, []);
+  useEffect(() => { 
+    fetchClasses(); 
+    fetchTransportRoutes();
+  }, []);
 
   const fetchClasses = async () => {
     try {
@@ -59,11 +65,31 @@ const AddStudent = () => {
     finally { setLoading(false); }
   };
 
+  const fetchTransportRoutes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BASE_URL}/api/transport`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTransportRoutes(Array.isArray(response.data) ? response.data : []);
+    } catch (error) { console.error("Error fetching transport routes"); }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleTransportChange = (e) => {
+    const placeName = e.target.value;
+    const selectedRoute = transportRoutes.find(r => r.placeName === placeName);
+    setFormData(prev => ({
+      ...prev,
+      transportRoute: placeName,
+      transportFee: selectedRoute ? selectedRoute.fare : 0
     }));
   };
 
@@ -95,7 +121,9 @@ const AddStudent = () => {
       class: formData.class,
       whatsappEnabled: formData.whatsappEnabled,
       feeDetails: {
-        isUsingTransport: formData.isUsingTransport
+        isUsingTransport: formData.isUsingTransport,
+        transportRoute: formData.transportRoute,
+        transportFee: formData.transportFee
       }
     };
 
@@ -112,7 +140,7 @@ const AddStudent = () => {
         fullName: '', class: '', fatherName: '', motherName: '',
         phone: '', email: '', address: '', dob: '', gender: '',
         bloodGroup: '', aadharNo: '', previousSchool: '',
-        whatsappEnabled: true, isUsingTransport: false
+        whatsappEnabled: true, isUsingTransport: false, transportRoute: '', transportFee: 0
       });
 
     } catch (error) {
@@ -209,6 +237,28 @@ const AddStudent = () => {
                 <input type="checkbox" name="isUsingTransport" checked={formData.isUsingTransport} onChange={handleChange} className="w-6 h-6 rounded-lg accent-red-600 cursor-pointer" />
                 <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><FaBus className="text-red-500 text-lg" /> Student uses School Transport</span>
               </label>
+
+              {formData.isUsingTransport && (
+                <div className="space-y-1.5 ml-9 animate-fade-in">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    Select Transport Route *
+                  </label>
+                  <select 
+                    name="transportRoute" 
+                    value={formData.transportRoute} 
+                    onChange={handleTransportChange} 
+                    required={formData.isUsingTransport}
+                    className="w-full bg-white border border-slate-200 p-3 rounded-xl text-sm outline-none shadow-sm focus:border-red-500 transition-colors cursor-pointer"
+                  >
+                    <option value="">Select a place...</option>
+                    {transportRoutes.map((route) => (
+                      <option key={route._id} value={route.placeName}>
+                        {route.placeName} (₹{route.fare}/month)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
