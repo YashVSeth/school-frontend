@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaUserEdit, FaTimes, FaSave } from 'react-icons/fa';
+import { FaUserEdit, FaTimes, FaSave, FaCamera } from 'react-icons/fa';
 
 const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] }) => {
-  // ✅ 1. Added height and weight to formData
   const [formData, setFormData] = useState({
     firstName: '', 
     lastName: '', 
@@ -15,30 +14,33 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
     email: '', 
     dob: '', 
     gender: '',
-    height: '', // Added height
-    weight: ''  // Added weight
+    height: '',
+    weight: ''
   });
   
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const BASE_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     if (isOpen && student) {
-        // ✅ 2. Pre-fill form safely including height and weight
         setFormData({
             firstName: student.firstName || '',
             lastName: student.lastName || '',
             studentId: student.studentId || '',
-            // Handle if class is populated object OR just an ID string
             class: student.class?._id || student.class || '', 
             fatherName: student.fatherName || '',
             phone: student.phone || '',
             email: student.email || '',
             dob: student.dob ? new Date(student.dob).toISOString().split('T')[0] : '', 
             gender: student.gender || '',
-            height: student.height || '', // Pre-fill height
-            weight: student.weight || ''  // Pre-fill weight
+            height: student.height || '',
+            weight: student.weight || ''
         });
+        setPhotoPreview(student.photo || null);
+        setPhotoFile(null);
     }
   }, [isOpen, student]);
 
@@ -46,12 +48,16 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 🔍 DEBUGGING: Check the ID before sending
-    console.log("Attempting to update Student ID:", student?._id);
-    console.log("Sending Data:", formData);
 
     if (!student?._id) {
         toast.error("Error: Student ID is missing. Cannot update.");
@@ -61,12 +67,24 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
       const url = `${BASE_URL}/api/students/${student._id}`;
-      console.log("Request URL:", url); 
 
-      await axios.put(url, formData, {
-        headers: { Authorization: `Bearer ${token}` }
+      const updateData = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          updateData.append(key, formData[key]);
+        }
+      });
+
+      if (photoFile) {
+        updateData.append('photo', photoFile);
+      }
+
+      await axios.put(url, updateData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
       toast.success("Student Updated Successfully!");
@@ -99,6 +117,34 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
 
         {/* Scrollable Form Body */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
+            {/* Photo Preview & Selector */}
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-100">
+              <div className="w-16 h-16 rounded-full bg-slate-100 border-2 border-slate-300 overflow-hidden flex items-center justify-center relative shadow-sm shrink-0">
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Student" className="w-full h-full object-cover" />
+                ) : (
+                  <FaCamera className="text-slate-400 text-xl" />
+                )}
+              </div>
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-bold px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
+                >
+                  {photoFile ? "Change Selected Photo" : "Upload New Photo"}
+                </button>
+                <p className="text-[10px] text-slate-400 mt-1">Stored securely on Google Drive</p>
+              </div>
+            </div>
+
             <form id="edit-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 
                 {/* First Name */}
@@ -161,14 +207,12 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                     </select>
                 </div>
 
-                {/* ✅ 3. Added Height Field */}
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Height</label>
                     <input type="text" name="height" value={formData.height} onChange={handleChange} placeholder="e.g. 150 cm"
                         className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition" />
                 </div>
 
-                {/* ✅ 4. Added Weight Field */}
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase">Weight</label>
                     <input type="text" name="weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 45 kg"

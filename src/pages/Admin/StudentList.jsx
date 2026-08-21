@@ -367,10 +367,14 @@ const StudentList = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div 
-                              className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none"
+                              className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none overflow-hidden"
                               style={{ backgroundColor: avatarColor.bg, color: avatarColor.text }}
                             >
-                              {initials}
+                              {s.photo ? (
+                                <img src={s.photo} alt={fullName} className="w-full h-full object-cover" />
+                              ) : (
+                                initials
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="font-bold text-slate-800 text-sm truncate">{fullName}</p>
