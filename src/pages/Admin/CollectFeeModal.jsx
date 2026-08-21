@@ -369,8 +369,12 @@ const RecordPayment = ({ onBack, onPaymentSuccess }) => {
                         {/* Selected Student Card */}
                         {selectedStudent && (
                             <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-4 border border-slate-100">
-                                <div className="w-11 h-11 rounded-full text-white font-black text-sm flex items-center justify-center shrink-0" style={{ backgroundColor: avatarColor }}>
-                                    {initials}
+                                <div className="w-11 h-11 rounded-full text-white font-black text-sm flex items-center justify-center shrink-0 overflow-hidden" style={{ backgroundColor: avatarColor }}>
+                                    {selectedStudent.photo ? (
+                                        <img src={selectedStudent.photo} alt={`${selectedStudent.firstName}`} className="w-full h-full object-cover" />
+                                    ) : (
+                                        initials
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-black text-slate-800">{selectedStudent.firstName} {selectedStudent.lastName}</p>
