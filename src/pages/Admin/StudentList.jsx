@@ -10,7 +10,6 @@ import {
 } from 'react-icons/fa';
 import EditStudentModal from './EditStudentModal';
 import StudentProfileModal from './StudentProfileModal';
-import PromoteModal from '../../components/PromoteModal';
 import PromoteClassModal from '../../components/PromoteClassModal';
 import { generateIDCards } from '../../utils/IDCardGenerator';
 import * as XLSX from 'xlsx';
@@ -472,13 +471,12 @@ const StudentList = () => {
         {/* ═══════════ MODALS ═══════════ */}
         <EditStudentModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} student={studentToEdit} classes={classes} refreshData={fetchData} />
         <StudentProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} student={studentToView} />
-        <PromoteModal isOpen={isPromoteModalOpen} onClose={() => setIsPromoteModalOpen(false)} student={studentToPromote} classes={classes} refreshData={fetchData} />
         <PromoteClassModal 
-            isOpen={isBulkPromoteOpen} 
-            onClose={() => setIsBulkPromoteOpen(false)} 
+            isOpen={isBulkPromoteOpen || isPromoteModalOpen} 
+            onClose={() => { setIsBulkPromoteOpen(false); setIsPromoteModalOpen(false); setStudentToPromote(null); }} 
             classes={classes} 
             refreshData={fetchData}
-            defaultClassId={selectedClass} 
+            defaultClassId={selectedClass || studentToPromote?.class?._id || (typeof studentToPromote?.class === 'string' ? studentToPromote?.class : '')} 
         />
       </div>
     </Layout>
