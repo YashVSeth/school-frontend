@@ -3,9 +3,9 @@ import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 import {
-  FaFileExcel, FaUpload, FaCheckCircle, FaExclamationTriangle,
+  FaFileExcel, FaUpload, FaCheckCircle,
   FaTimes, FaDownload, FaUserGraduate, FaChalkboardTeacher,
-  FaMagic, FaSyncAlt, FaArrowRight, FaTable
+  FaMagic, FaSyncAlt, FaArrowRight, FaTable, FaChevronDown, FaChevronUp
 } from 'react-icons/fa';
 
 const ExcelDataImporter = ({ onImportSuccess }) => {
@@ -18,6 +18,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
+  const [showPreview, setShowPreview] = useState(true);
   const fileInputRef = useRef(null);
 
   const BASE_URL = import.meta.env.VITE_API_URL;
@@ -25,26 +26,24 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
   // ─────────────────────────────────────────────────────────────
   // 1. SMART AUTO-DETECTION ENGINE
   // ─────────────────────────────────────────────────────────────
-  const detectDataType = (headers, firstRow = {}) => {
+  const detectDataType = (headers) => {
     const headerStr = headers.map(h => String(h).toLowerCase().trim()).join(' ');
     
     let studentScore = 0;
     let teacherScore = 0;
 
-    // Student Keywords
     ['student', 'roll', 'father', 'mother', 'class', 'grade', 'admission', 'aadhar', 'dob', 'parent'].forEach(kw => {
       if (headerStr.includes(kw)) studentScore += 2;
     });
 
-    // Teacher Keywords
     ['teacher', 'salary', 'qualification', 'specialization', 'subject', 'designation', 'experience', 'joining'].forEach(kw => {
       if (headerStr.includes(kw)) teacherScore += 2;
     });
 
     if (teacherScore > studentScore) {
-      return { type: 'teachers', label: 'Teachers List (Auto-Detected ✨)' };
+      return { type: 'teachers', label: 'Teachers' };
     } else {
-      return { type: 'students', label: 'Students List (Auto-Detected ✨)' };
+      return { type: 'students', label: 'Students' };
     }
   };
 
@@ -89,8 +88,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
       bloodGroup,
       aadharNo,
       address,
-      isValid,
-      status: isValid ? 'Valid' : 'Missing Name'
+      isValid
     };
   };
 
@@ -119,8 +117,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
       gender,
       experience,
       address,
-      isValid,
-      status: isValid ? 'Valid' : 'Missing Name'
+      isValid
     };
   };
 
@@ -152,23 +149,23 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
         }
 
         const headers = Object.keys(rawJson[0]);
-        const detected = detectDataType(headers, rawJson[0]);
+        const detected = detectDataType(headers);
 
         setDetectedType(detected.type);
         setAutoDetectedLabel(detected.label);
         setParsedData(rawJson);
 
-        // Apply initial row mapping
         const mapped = detected.type === 'students'
           ? rawJson.map((r, i) => mapStudentRow(r, i))
           : rawJson.map((r, i) => mapTeacherRow(r, i));
 
         setMappedRows(mapped);
-        toast.success(`Excel Parsed: Detected ${mapped.length} ${detected.type === 'students' ? 'Students' : 'Teachers'}!`);
+        setShowPreview(true);
+        toast.success(`Detected ${mapped.length} ${detected.type === 'students' ? 'Students' : 'Teachers'}!`);
 
       } catch (err) {
         console.error("Excel Parse Error:", err);
-        toast.error("Failed to parse Excel file. Please ensure it's a valid .xlsx or .csv.");
+        toast.error("Failed to parse Excel file.");
       } finally {
         setIsProcessing(false);
       }
@@ -216,7 +213,6 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
         : { teachers: mappedRows };
 
       const response = await axios.post(endpoint, payload, { headers });
-
       const data = response.data;
       setImportSummary(data);
 
@@ -228,8 +224,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
 
     } catch (error) {
       console.error("Import Error:", error);
-      const msg = error.response?.data?.message || "Bulk import failed. Please check server connection.";
-      toast.error(msg);
+      toast.error(error.response?.data?.message || "Bulk import failed.");
     } finally {
       setImportLoading(false);
     }
@@ -240,7 +235,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
   // ─────────────────────────────────────────────────────────────
   const downloadSampleTemplate = (type) => {
     let sampleData = [];
-    let fileName = '';
+    let name = '';
 
     if (type === 'students') {
       sampleData = [
@@ -248,28 +243,24 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
           "Full Name": "Aarav Sharma",
           "Class": "10 - A",
           "Father Name": "Rajesh Sharma",
-          "Mother Name": "Pooja Sharma",
           "Phone": "9876543210",
           "Email": "aarav.parent@gmail.com",
           "Gender": "Male",
           "Date of Birth": "2010-05-15",
-          "Blood Group": "B+",
           "Address": "Civil Lines, Prayagraj"
         },
         {
           "Full Name": "Ananya Verma",
           "Class": "10 - A",
           "Father Name": "Manoj Verma",
-          "Mother Name": "Kavita Verma",
           "Phone": "9123456780",
           "Email": "ananya.parent@gmail.com",
           "Gender": "Female",
           "Date of Birth": "2010-08-22",
-          "Blood Group": "O+",
           "Address": "Tagore Town, Prayagraj"
         }
       ];
-      fileName = "Sample_Students_Template.xlsx";
+      name = "Sample_Students_Template.xlsx";
     } else {
       sampleData = [
         {
@@ -280,245 +271,183 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
           "Qualification": "M.Sc, B.Ed",
           "Salary": 32000,
           "Gender": "Male",
-          "Experience": "5 Years",
           "Address": "George Town, Prayagraj"
-        },
-        {
-          "Full Name": "Sunita Tiwari",
-          "Email": "sunita.tiwari@school.com",
-          "Phone": "9876505678",
-          "Subject": "Science",
-          "Qualification": "M.Sc Physics",
-          "Salary": 30000,
-          "Gender": "Female",
-          "Experience": "3 Years",
-          "Address": "Ashok Nagar, Prayagraj"
         }
       ];
-      fileName = "Sample_Teachers_Template.xlsx";
+      name = "Sample_Teachers_Template.xlsx";
     }
 
     const ws = XLSX.utils.json_to_sheet(sampleData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, fileName);
-    toast.info(`Downloaded ${fileName}`);
+    XLSX.writeFile(wb, name);
+    toast.info(`Downloaded ${name}`);
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm transition-all">
-      
-      {/* Header & Template Links */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-sm shrink-0">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm transition-all">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept=".xlsx, .xls, .csv"
+        className="hidden"
+      />
+
+      {/* Slim Compact Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0 shadow-inner">
             <FaFileExcel />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">Smart Excel Data Importer</h2>
-              <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                <FaMagic size={10} /> Auto-Detect
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-800">Quick Excel Data Import</h3>
+              <span className="bg-emerald-100 text-emerald-700 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                <FaMagic size={8} /> Auto-Detect
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Upload any spreadsheet (.xlsx, .xls, .csv) — the system automatically detects, maps & adds records to the database.
+            <p className="text-[11px] text-slate-400">
+              Upload .xlsx / .csv to auto-detect and import students or teachers.
             </p>
           </div>
         </div>
 
-        {/* Quick Sample Downloads */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => downloadSampleTemplate('students')}
+              className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
+            >
+              <FaDownload size={10} className="text-emerald-600" /> Student Sample
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadSampleTemplate('teachers')}
+              className="text-[11px] font-bold text-slate-500 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
+            >
+              <FaDownload size={10} className="text-blue-600" /> Teacher Sample
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => downloadSampleTemplate('students')}
-            className="text-xs font-bold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95 shrink-0"
           >
-            <FaDownload className="text-emerald-600" /> Student Template
-          </button>
-          <button
-            type="button"
-            onClick={() => downloadSampleTemplate('teachers')}
-            className="text-xs font-bold text-slate-600 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
-          >
-            <FaDownload className="text-blue-600" /> Teacher Template
+            <FaUpload size={11} /> {file ? "Change File" : "Upload Sheet"}
           </button>
         </div>
       </div>
 
-      {/* Upload & Dropzone Area */}
-      {!file ? (
-        <div className="mt-6">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept=".xlsx, .xls, .csv"
-            className="hidden"
-          />
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-200 hover:border-emerald-500 bg-slate-50/50 hover:bg-emerald-50/20 rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition-all group flex flex-col items-center justify-center gap-3"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-slate-100 flex items-center justify-center text-emerald-600 text-3xl group-hover:scale-110 transition-transform">
-              <FaUpload />
-            </div>
-            <div>
-              <p className="text-base font-bold text-slate-800 group-hover:text-emerald-700 transition">
-                Click to browse or drag & drop your Excel / CSV sheet here
-              </p>
-              <p className="text-xs text-slate-400 font-medium mt-1">
-                Supports Microsoft Excel (.xlsx, .xls) and CSV files. Auto-detects columns automatically.
-              </p>
-            </div>
-            <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100/70 px-4 py-1.5 rounded-full mt-1">
-              Select Spreadsheet File
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-6 space-y-6">
-
-          {/* File Status & Auto-Detect Controls */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0">
-                <FaFileExcel />
-              </div>
-              <div>
-                <p className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  {fileName}
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                    {mappedRows.length} Rows
-                  </span>
-                </p>
-                {autoDetectedLabel && (
-                  <p className="text-xs font-bold text-emerald-700 mt-0.5">
-                    {autoDetectedLabel}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Type Override Switcher */}
-            <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm self-start md:self-auto">
-              <button
-                type="button"
-                onClick={() => handleTypeChange('students')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                  detectedType === 'students'
-                    ? 'bg-red-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <FaUserGraduate /> Students ({mappedRows.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTypeChange('teachers')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                  detectedType === 'teachers'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <FaChalkboardTeacher /> Teachers ({mappedRows.length})
-              </button>
-              <button
-                type="button"
-                onClick={resetImporter}
-                className="p-2 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-slate-100"
-                title="Remove File & Reset"
-              >
-                <FaTimes size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* Import Summary Result Banner (if submitted) */}
-          {importSummary && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-emerald-900 animate-fade-in flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <FaCheckCircle className="text-emerald-600 text-xl mt-0.5 shrink-0" />
-                <div>
-                  <h4 className="font-black text-emerald-900 text-base">{importSummary.message}</h4>
-                  <p className="text-xs font-medium text-emerald-700 mt-1">
-                    Added <strong>{importSummary.importedCount}</strong> new {detectedType} to the portal.
-                    {importSummary.errors?.length > 0 && ` (${importSummary.errors.length} skipped due to validation errors).`}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={resetImporter}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm shrink-0"
-              >
-                Import Another Sheet
-              </button>
-            </div>
-          )}
-
-          {/* Data Preview Table */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <FaTable className="text-slate-400" /> Parsed Data Preview (First 50 Rows)
-              </h3>
-              <span className="text-xs text-slate-400 font-medium">
-                {mappedRows.filter(r => r.isValid).length} Valid / {mappedRows.length} Total
+      {/* Expanded Details when File is Selected */}
+      {file && (
+        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3 animate-fade-in">
+          
+          {/* File summary line */}
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-800 truncate max-w-xs">{fileName}</span>
+              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                {mappedRows.length} Rows
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                Auto-Detected: <strong className="text-emerald-700">{autoDetectedLabel}</strong>
               </span>
             </div>
 
-            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm max-h-72 overflow-y-auto custom-scrollbar">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-100/80 text-slate-600 uppercase font-black tracking-wider sticky top-0 z-10 border-b border-slate-200">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => handleTypeChange('students')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold transition ${
+                    detectedType === 'students' ? 'bg-red-600 text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Students
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTypeChange('teachers')}
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold transition ${
+                    detectedType === 'teachers' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Teachers
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                className="text-[11px] text-slate-500 hover:text-slate-800 font-bold px-2 py-1 flex items-center gap-1"
+              >
+                {showPreview ? <><FaChevronUp size={9} /> Hide</> : <><FaChevronDown size={9} /> Preview</>}
+              </button>
+
+              <button
+                type="button"
+                onClick={resetImporter}
+                className="text-slate-400 hover:text-red-500 p-1"
+                title="Remove file"
+              >
+                <FaTimes size={12} />
+              </button>
+            </div>
+          </div>
+
+          {/* Compact Preview Table */}
+          {showPreview && mappedRows.length > 0 && (
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-inner max-h-48 overflow-y-auto custom-scrollbar">
+              <table className="w-full text-left text-[11px] border-collapse">
+                <thead className="bg-slate-100 text-slate-600 uppercase font-black tracking-wider sticky top-0 z-10 border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-4">#</th>
-                    <th className="py-3 px-4">Full Name</th>
+                    <th className="py-2 px-3">#</th>
+                    <th className="py-2 px-3">Full Name</th>
                     {detectedType === 'students' ? (
                       <>
-                        <th className="py-3 px-4">Class</th>
-                        <th className="py-3 px-4">Father Name</th>
-                        <th className="py-3 px-4">Contact Phone</th>
-                        <th className="py-3 px-4">Gender</th>
+                        <th className="py-2 px-3">Class</th>
+                        <th className="py-2 px-3">Father Name</th>
+                        <th className="py-2 px-3">Phone</th>
                       </>
                     ) : (
                       <>
-                        <th className="py-3 px-4">Email</th>
-                        <th className="py-3 px-4">Phone</th>
-                        <th className="py-3 px-4">Subject</th>
-                        <th className="py-3 px-4">Salary</th>
+                        <th className="py-2 px-3">Email</th>
+                        <th className="py-2 px-3">Subject</th>
+                        <th className="py-2 px-3">Salary</th>
                       </>
                     )}
-                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-2 px-3 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white font-medium text-slate-700">
-                  {mappedRows.slice(0, 50).map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition">
-                      <td className="py-2.5 px-4 text-slate-400 font-bold">{idx + 1}</td>
-                      <td className="py-2.5 px-4 font-bold text-slate-800">{row.fullName}</td>
+                  {mappedRows.slice(0, 30).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="py-1.5 px-3 text-slate-400">{idx + 1}</td>
+                      <td className="py-1.5 px-3 font-bold text-slate-800">{row.fullName}</td>
                       {detectedType === 'students' ? (
                         <>
-                          <td className="py-2.5 px-4"><span className="bg-red-50 text-red-700 px-2 py-0.5 rounded font-bold">{row.class}</span></td>
-                          <td className="py-2.5 px-4">{row.fatherName}</td>
-                          <td className="py-2.5 px-4">{row.phone}</td>
-                          <td className="py-2.5 px-4">{row.gender}</td>
+                          <td className="py-1.5 px-3 text-red-600 font-bold">{row.class}</td>
+                          <td className="py-1.5 px-3">{row.fatherName}</td>
+                          <td className="py-1.5 px-3">{row.phone}</td>
                         </>
                       ) : (
                         <>
-                          <td className="py-2.5 px-4 text-slate-500">{row.email}</td>
-                          <td className="py-2.5 px-4">{row.phone}</td>
-                          <td className="py-2.5 px-4"><span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold">{row.subject}</span></td>
-                          <td className="py-2.5 px-4 font-bold">₹{row.salary}</td>
+                          <td className="py-1.5 px-3 text-slate-500">{row.email}</td>
+                          <td className="py-1.5 px-3 text-blue-600 font-bold">{row.subject}</td>
+                          <td className="py-1.5 px-3 font-bold">₹{row.salary}</td>
                         </>
                       )}
-                      <td className="py-2.5 px-4 text-center">
+                      <td className="py-1.5 px-3 text-center">
                         {row.isValid ? (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
                             ✅ Ready
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">
+                          <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded">
                             ⚠️ Incomplete
                           </span>
                         )}
@@ -528,45 +457,61 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                 </tbody>
               </table>
             </div>
-          </div>
+          )}
 
-          {/* Action Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-            <div className="text-xs text-slate-500 font-medium">
-              Ready to import <strong className="text-slate-800">{mappedRows.length}</strong> {detectedType} records directly into your database.
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Import Summary Result Banner */}
+          {importSummary && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-900 flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <FaCheckCircle className="text-emerald-600 shrink-0" />
+                <span className="font-bold">{importSummary.message}</span>
+              </div>
               <button
-                type="button"
                 onClick={resetImporter}
-                className="px-5 py-3 text-slate-600 hover:bg-slate-100 rounded-xl font-bold text-xs transition"
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shrink-0"
               >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleBulkImport}
-                disabled={importLoading || mappedRows.length === 0}
-                className={`flex-1 sm:flex-initial px-6 py-3 rounded-xl font-bold text-sm text-white transition flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  detectedType === 'students'
-                    ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
-                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
-                }`}
-              >
-                {importLoading ? (
-                  <>
-                    <FaSyncAlt className="animate-spin" /> Importing Records...
-                  </>
-                ) : (
-                  <>
-                    <FaArrowRight /> Complete Bulk Import ({mappedRows.length})
-                  </>
-                )}
+                Import Another
               </button>
             </div>
-          </div>
+          )}
+
+          {/* Action Row */}
+          {!importSummary && (
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-slate-400">
+                Ready to add {mappedRows.length} {detectedType} to portal.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={resetImporter}
+                  className="px-3 py-1.5 text-slate-500 hover:bg-slate-100 rounded-lg text-xs font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkImport}
+                  disabled={importLoading || mappedRows.length === 0}
+                  className={`px-4 py-1.5 rounded-lg font-bold text-xs text-white transition flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 ${
+                    detectedType === 'students'
+                      ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
+                      : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
+                  }`}
+                >
+                  {importLoading ? (
+                    <>
+                      <FaSyncAlt className="animate-spin" /> Importing...
+                    </>
+                  ) : (
+                    <>
+                      <FaArrowRight /> Import ({mappedRows.length}) Records
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
