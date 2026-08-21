@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import ExcelDataImporter from '../../components/ExcelDataImporter';
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -99,6 +100,9 @@ const Dashboard = () => {
           <StatCard title="Fees Collected" value={`₹${(stats.totalCollected / 1000).toFixed(1)}K`} subText="Today" icon={<FaWallet />} color="text-amber-500" bgColor="bg-amber-50" />
           <StatCard title="Inventory Alerts" value={`08`} subText="Critical" subTextColor="text-rose-500" icon={<FaMoneyBillWave />} color="text-rose-500" bgColor="bg-rose-50" />
         </div>
+
+        {/* --- SMART EXCEL DATA IMPORTER --- */}
+        <ExcelDataImporter onImportSuccess={fetchInitialData} />
 
         {/* --- MAIN PENDING ACTIONS SECTION --- */}
         <div className="mt-8">
