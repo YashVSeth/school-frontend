@@ -6,10 +6,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import {
   FaUserGraduate, FaUserTie, FaMapMarkerAlt, FaCalendarAlt,
   FaPhone, FaIdCard, FaBus, FaWhatsapp, FaEnvelope, FaVenusMars,
-  FaCamera, FaTimes
+  FaCamera, FaTimes, FaCloudUploadAlt, FaCheckCircle, FaImage
 } from 'react-icons/fa';
 
-// Component outside to avoid keyboard refocus on mobile
+// Reusable InputField
 const InputField = ({ label, name, type = "text", value, onChange, placeholder, required = false, icon }) => (
   <div className="space-y-1.5">
     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
@@ -90,6 +90,10 @@ const AddStudent = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Photo size should be less than 10MB");
+        return;
+      }
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
     }
@@ -174,60 +178,118 @@ const AddStudent = () => {
     <Layout>
       <div className="max-w-6xl mx-auto animate-fade-in-up pb-10">
         <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+        
+        {/* Header Banner */}
         <div className="bg-gradient-to-r from-red-800 to-red-600 rounded-2xl p-8 mb-8 text-white shadow-xl flex items-center justify-between">
           <div> 
             <h1 className="text-3xl font-bold tracking-tight">Student Admission</h1>
-            <p className="text-red-100 mt-2 opacity-90">Register new student profile with photo storage.</p> 
+            <p className="text-red-100 mt-2 opacity-90">Register new student profile with photo and complete records.</p> 
           </div>
           <FaUserGraduate size={40} className="opacity-20 hidden md:block" />
         </div>
 
         <form onSubmit={handleAddSubmit} className="space-y-6">
 
-          {/* Section 0: Photo Upload & Identity */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-6 items-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-28 h-28 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative shadow-inner group">
-                {photoPreview ? (
-                  <>
-                    <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 1: STUDENT PHOTOGRAPH UPLOAD */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center text-sm font-bold">
+                  <FaCamera />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-800">Student Photograph</h2>
+                  <p className="text-xs text-slate-400">Official passport photo for student profile, ID card & portal</p>
+                </div>
+              </div>
+              <span className="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <FaCloudUploadAlt className="text-red-500" /> Cloud Storage
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-50/70 rounded-xl border border-slate-200/80">
+              {/* Photo Preview Thumbnail */}
+              <div className="relative group shrink-0">
+                <div className="w-32 h-32 rounded-2xl bg-white border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shadow-sm transition-all group-hover:border-red-400">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Student Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-slate-400 text-center p-2">
+                      <FaImage size={32} className="opacity-40 mb-1" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">No Photo</span>
+                    </div>
+                  )}
+                </div>
+
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-transform hover:scale-110"
+                    title="Remove Photo"
+                  >
+                    <FaTimes size={11} />
+                  </button>
+                )}
+              </div>
+
+              {/* Upload Controls & Instructions */}
+              <div className="flex-1 space-y-2.5 text-center sm:text-left">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  className="hidden"
+                />
+
+                <div className="flex flex-wrap gap-2.5 justify-center sm:justify-start">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm shadow-red-500/20 active:scale-95"
+                  >
+                    <FaCamera /> {photoFile ? "Change Photograph" : "Choose Student Photo"}
+                  </button>
+                  {photoFile && (
                     <button
                       type="button"
                       onClick={removePhoto}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md hover:bg-red-700 transition"
+                      className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition"
                     >
-                      <FaTimes size={10} />
+                      Remove
                     </button>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center text-slate-400">
-                    <FaCamera size={26} />
-                    <span className="text-[10px] font-bold mt-1 uppercase">Photo</span>
+                  )}
+                </div>
+
+                {photoFile ? (
+                  <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg w-fit">
+                    <FaCheckCircle /> {photoFile.name} ({(photoFile.size / 1024).toFixed(1)} KB)
                   </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Accepts <strong>JPG, PNG, WebP</strong> up to <strong>10 MB</strong>. Stored automatically in Google Drive / Cloud.
+                  </p>
                 )}
               </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handlePhotoChange}
-                accept="image/*"
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs font-bold px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
-              >
-                {photoFile ? "Change Photo" : "Upload Photo"}
-              </button>
             </div>
+          </div>
 
-            <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-              <InputField label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required icon={<FaUserGraduate />} />
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 2: BASIC IDENTITY & CLASS */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+              <FaUserGraduate className="text-red-500" /> Basic Student Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InputField label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required icon={<FaUserGraduate />} placeholder="e.g. Rahul Sharma" />
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Assign Class *</label>
-                <select name="class" value={formData.class} onChange={handleChange} required className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none shadow-sm">
+                <select name="class" value={formData.class} onChange={handleChange} required className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-red-500">
                   <option value="">Select Class</option>
                   {classes.map((cls) => (
                     <option key={cls._id} value={cls._id}>{cls.grade} - {cls.section}</option>
@@ -237,17 +299,29 @@ const AddStudent = () => {
             </div>
           </div>
 
-          {/* Section 2: Family & Contact */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputField label="Father's Name" name="fatherName" value={formData.fatherName} onChange={handleChange} required icon={<FaUserTie />} />
-            <InputField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} />
-            <InputField label="WhatsApp/Phone No" name="phone" value={formData.phone} onChange={handleChange} required icon={<FaPhone />} />
-            <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} icon={<FaEnvelope />} />
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 3: PARENT & CONTACT DETAILS */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+              <FaUserTie className="text-red-500" /> Parent & Contact Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <InputField label="Father's Name" name="fatherName" value={formData.fatherName} onChange={handleChange} required icon={<FaUserTie />} placeholder="e.g. Ramesh Sharma" />
+              <InputField label="Mother's Name" name="motherName" value={formData.motherName} onChange={handleChange} placeholder="e.g. Sunita Sharma" />
+              <InputField label="WhatsApp / Contact Phone" name="phone" value={formData.phone} onChange={handleChange} required icon={<FaPhone />} placeholder="e.g. 9876543210" />
+              <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} icon={<FaEnvelope />} placeholder="e.g. parent@email.com" />
+            </div>
           </div>
 
-          {/* Section 3: Personal Details & Settings */}
+          {/* ══════════════════════════════════════════════════════════ */}
+          {/* SECTION 4: PERSONAL DETAILS & PREFERENCES */}
+          {/* ══════════════════════════════════════════════════════════ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                <FaIdCard className="text-red-500" /> Personal & Medical Records
+              </h2>
               <div className="grid grid-cols-2 gap-4">
                 <InputField label="Date of Birth" name="dob" type="date" value={formData.dob} onChange={handleChange} />
                 <div className="space-y-1.5">
@@ -282,15 +356,20 @@ const AddStudent = () => {
                 <InputField label="Aadhar No" name="aadharNo" value={formData.aadharNo} onChange={handleChange} placeholder="e.g. 1234 5678 9012" />
               </div>
               <InputField label="Previous School" name="previousSchool" value={formData.previousSchool} onChange={handleChange} placeholder="e.g. XYZ Public School" />
-              <InputField label="Full Address" name="address" value={formData.address} onChange={handleChange} icon={<FaMapMarkerAlt />} />
+              <InputField label="Full Address" name="address" value={formData.address} onChange={handleChange} icon={<FaMapMarkerAlt />} placeholder="Full residential address" />
             </div>
 
+            {/* Transport & WhatsApp settings */}
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col justify-center gap-5">
+              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2">
+                <FaBus className="text-red-500" /> Transport & Alerts
+              </h2>
+
               <label className="flex items-center gap-3 cursor-pointer group">
                 <input type="checkbox" name="whatsappEnabled" checked={formData.whatsappEnabled} onChange={handleChange} className="w-6 h-6 rounded-lg accent-green-600 cursor-pointer" />
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><FaWhatsapp className="text-green-500 text-lg" /> Enable WhatsApp Notifications</span>
-                  <span className="text-[10px] text-slate-500">Fee alerts & attendance will be sent on {formData.phone || 'Phone No'}</span>
+                  <span className="text-[10px] text-slate-500">Fee alerts & attendance updates will be sent to {formData.phone || 'Phone Number'}</span>
                 </div>
               </label>
 
