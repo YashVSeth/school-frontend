@@ -6,8 +6,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import {
   FaUserGraduate, FaUserTie, FaMapMarkerAlt, FaCalendarAlt,
   FaPhone, FaIdCard, FaBus, FaWhatsapp, FaEnvelope, FaVenusMars,
-  FaCamera, FaTimes, FaCloudUploadAlt, FaCheckCircle, FaImage
+  FaCamera, FaTimes, FaCloudUploadAlt, FaCheckCircle, FaImage, FaVideo
 } from 'react-icons/fa';
+import CameraCaptureModal from '../../components/CameraCaptureModal';
 
 // Reusable InputField
 const InputField = ({ label, name, type = "text", value, onChange, placeholder, required = false, icon }) => (
@@ -29,6 +30,7 @@ const AddStudent = () => {
   const [loading, setLoading] = useState(true);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -250,8 +252,17 @@ const AddStudent = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm shadow-red-500/20 active:scale-95"
                   >
-                    <FaCamera /> {photoFile ? "Change Photograph" : "Choose Student Photo"}
+                    <FaCamera /> {photoFile ? "Change File" : "Choose Student Photo"}
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm active:scale-95"
+                  >
+                    <FaVideo className="text-red-400" /> Click Photo (USB / Camera)
+                  </button>
+
                   {photoFile && (
                     <button
                       type="button"
@@ -262,6 +273,17 @@ const AddStudent = () => {
                     </button>
                   )}
                 </div>
+
+                {/* Camera Capture Modal */}
+                <CameraCaptureModal
+                  isOpen={isCameraOpen}
+                  onClose={() => setIsCameraOpen(false)}
+                  onCapture={(file, previewUrl) => {
+                    setPhotoFile(file);
+                    setPhotoPreview(previewUrl);
+                    toast.success("Photo captured successfully!");
+                  }}
+                />
 
                 {photoFile ? (
                   <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg w-fit">

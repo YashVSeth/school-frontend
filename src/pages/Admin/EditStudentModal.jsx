@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FaUserEdit, FaTimes, FaSave, FaCamera } from 'react-icons/fa';
+import { FaUserEdit, FaTimes, FaSave, FaCamera, FaVideo } from 'react-icons/fa';
+import CameraCaptureModal from '../../components/CameraCaptureModal';
 
 const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
   
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const BASE_URL = import.meta.env.VITE_API_URL;
@@ -133,14 +135,35 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                   accept="image/*"
                   className="hidden"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-bold px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
-                >
-                  {photoFile ? "Change Selected Photo" : "Upload New Photo"}
-                </button>
-                <p className="text-[10px] text-slate-400 mt-1">Stored securely on Google Drive</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs font-bold px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition flex items-center gap-1.5"
+                  >
+                    <FaCamera /> {photoFile ? "Change File" : "Choose File"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="text-xs font-bold px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition flex items-center gap-1.5"
+                  >
+                    <FaVideo className="text-red-400" /> Click Photo (USB)
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Upload or click live photo · Stored securely on Google Drive</p>
+
+                {/* Camera Modal */}
+                <CameraCaptureModal
+                  isOpen={isCameraOpen}
+                  onClose={() => setIsCameraOpen(false)}
+                  onCapture={(file, previewUrl) => {
+                    setPhotoFile(file);
+                    setPhotoPreview(previewUrl);
+                    toast.success("Photo captured successfully!");
+                  }}
+                />
               </div>
             </div>
 
