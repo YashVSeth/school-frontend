@@ -82,8 +82,7 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
 
       await axios.put(url, updateData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+          Authorization: `Bearer ${token}`
         }
       });
       

@@ -152,8 +152,7 @@ const AddStudent = () => {
       const token = localStorage.getItem('token');
       await axios.post(`${BASE_URL}/api/students`, submissionData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+          Authorization: `Bearer ${token}`
         },
       });
 

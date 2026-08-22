@@ -73,10 +73,15 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
             {/* Avatar */}
             <div className="w-24 h-24 rounded-full border-4 border-slate-600 bg-white flex items-center justify-center text-slate-800 font-bold text-3xl overflow-hidden shadow-lg shrink-0">
               {student.photo ? (
-                <img src={student.photo} className="w-full h-full object-cover" alt="Student" />
-              ) : (
-                fullName.charAt(0) || 'S'
-              )}
+                <img 
+                  src={student.photo} 
+                  className="w-full h-full object-cover" 
+                  alt="Student" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : null}
+              {(!student.photo || student.photo === '') && (fullName.charAt(0) || 'S')}
             </div>
             
             {/* Text Info */}
