@@ -71,7 +71,7 @@ const Classes = () => {
 
   const BASE_URL = import.meta.env.VITE_API_URL;
   const gradeOptions = ["Nursery", "LKG", "UKG", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
-  const sectionOptions = ["A", "B", "C", "D", "E"];
+  const sectionOptions = ["None (No Section)", "A", "B", "C", "D", "E", "F"];
 
   useEffect(() => { fetchClasses(); }, []);
 
@@ -85,10 +85,19 @@ const Classes = () => {
 
   const handleAddClass = async (e) => {
     e.preventDefault();
+    if (!classForm.grade) {
+      return toast.error("Please select a Grade");
+    }
+    const cleanSection = classForm.section === "None (No Section)" ? "" : (classForm.section || "").trim();
+
     try {
       const token = localStorage.getItem('token');
-      // ✅ Sending Data to Backend
-      await axios.post(`${BASE_URL}/api/classes`, classForm, { headers: { Authorization: `Bearer ${token}` } });
+      // Sending Data to Backend (section is optional)
+      await axios.post(
+        `${BASE_URL}/api/classes`,
+        { grade: classForm.grade, section: cleanSection },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       toast.success("Class Added Successfully!");
       setClassForm({ grade: '', section: '' });
       fetchClasses();
@@ -149,8 +158,11 @@ const Classes = () => {
                 <CustomSelect
                   name="section"
                   value={classForm.section}
-                  onChange={(e) => setClassForm({ ...classForm, section: e.target.value })}
-                  placeholder="Section"
+                  onChange={(e) => {
+                    const val = e.target.value === "None (No Section)" ? "" : e.target.value;
+                    setClassForm({ ...classForm, section: val });
+                  }}
+                  placeholder="Section (Optional)"
                   options={sectionOptions}
                 />
               </div>
@@ -196,8 +208,13 @@ const Classes = () => {
 
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 group-hover:text-red-600">
-                      {cls.grade} - {cls.section}
+                    <h3 className="text-lg font-bold text-slate-800 group-hover:text-red-600 flex items-center gap-2">
+                      <span>{cls.grade}{cls.section ? ` - ${cls.section}` : ''}</span>
+                      {!cls.section && (
+                        <span className="text-[10px] bg-slate-200/70 text-slate-600 font-semibold px-2 py-0.5 rounded-md">
+                          No Section
+                        </span>
+                      )}
                     </h3>
                   </div>
                 </div>

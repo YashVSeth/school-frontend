@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaChalkboardTeacher, FaUserGraduate, FaClipboardList,
   FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes,
-  FaWallet // ✅ Imported the Wallet icon for Finance
+  FaWallet, FaIdCard, FaAward, FaCog
 } from 'react-icons/fa';
 import { FaMoneyBillWave } from 'react-icons/fa';
 import { FaLayerGroup } from 'react-icons/fa';
@@ -159,6 +159,45 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           >
             <FaChalkboardTeacher />
             <span className="font-medium">Teachers</span>
+          </Link>
+
+          {/* ✅ NEW ID CARD LINK */}
+          <Link
+            to="/admin/id-cards"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/id-cards')
+              ? 'bg-[#800000] text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaIdCard />
+            <span className="font-medium">ID Cards</span>
+          </Link>
+
+          {/* ✅ NEW RESULTS LINK */}
+          <Link
+            to="/admin/results"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/results')
+              ? 'bg-[#800000] text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaAward />
+            <span className="font-medium">Results</span>
+          </Link>
+
+          {/* ⚙️ SETTINGS */}
+          <Link
+            to="/admin/settings"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/settings')
+              ? 'bg-[#800000] text-white shadow-lg'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaCog />
+            <span className="font-medium">Settings</span>
           </Link>
         </nav>
 

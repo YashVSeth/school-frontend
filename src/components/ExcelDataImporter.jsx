@@ -32,7 +32,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
     let studentScore = 0;
     let teacherScore = 0;
 
-    ['student', 'roll', 'father', 'mother', 'class', 'grade', 'admission', 'aadhar', 'dob', 'parent'].forEach(kw => {
+    ['student', 'roll', 'father', 'fther', 'mother', 'class', 'grade', 'admission', 'aadhar', 'dob', 'parent', 'mobile'].forEach(kw => {
       if (headerStr.includes(kw)) studentScore += 2;
     });
 
@@ -48,8 +48,110 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 2. FLEXIBLE COLUMN MAPPER
+  // 2. FLEXIBLE COLUMN MAPPER & PHONE EXTRACTOR
   // ─────────────────────────────────────────────────────────────
+  const cleanPhoneNumber = (val) => {
+    if (val === undefined || val === null) return '';
+    let str = String(val).trim();
+    if (!str) return '';
+
+    // If scientific notation from Excel (e.g. 9.87654321E+09)
+    if (/e[+-]?\d+/i.test(str)) {
+      const num = Number(str);
+      if (!isNaN(num)) {
+        str = Math.round(num).toString();
+      }
+    }
+
+    // Strip trailing decimal e.g. 9876543210.0
+    str = str.replace(/\.0+$/, '');
+
+    // If cell contains multiple phone numbers separated by /, comma, etc., grab the first 10-12 digit sequence
+    if (str.includes('/') || str.includes(',') || str.includes(';') || str.includes(' ')) {
+      const parts = str.split(/[/,;\s]+/);
+      for (const p of parts) {
+        const pClean = p.replace(/[^\d+]/g, '');
+        const pDigits = pClean.replace(/\D/g, '');
+        if (pDigits.length >= 10 && pDigits.length <= 13) {
+          return pClean;
+        }
+      }
+    }
+
+    // Remove non-digit characters except leading +
+    const cleanStr = str.replace(/[^\d+]/g, '');
+    return cleanStr || str;
+  };
+
+  const extractPhone = (row, norm) => {
+    // 1. Direct normalized key lookups covering all common variants
+    const candidateKeys = [
+      'mobileno', 'mobile', 'phone', 'contact', 'whatsapp', 'mobno', 'mob',
+      'phoneno', 'mobilenumber', 'phonenumber', 'contactno', 'contactnumber',
+      'phno', 'ph', 'mno', 'cell', 'cellno', 'telephone', 'tel',
+      'parentmobile', 'parentsmobile', 'parentmobileno', 'parentcontact',
+      'fathermobile', 'fathersmobileno', 'whatsappno', 'whatsappnumber',
+      'mobile1', 'mobile2', 'phone1', 'phone2'
+    ];
+
+    for (const key of candidateKeys) {
+      if (norm[key] !== undefined && norm[key] !== null && String(norm[key]).trim() !== '') {
+        const cleaned = cleanPhoneNumber(norm[key]);
+        if (cleaned) return cleaned;
+      }
+    }
+
+    // 2. Fuzzy match: inspect any key containing mobile/phone/contact/mob/whatsapp
+    for (const [k, v] of Object.entries(norm)) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        if (
+          k.includes('mobile') ||
+          k.includes('phone') ||
+          k.includes('contact') ||
+          k.includes('whatsapp') ||
+          k.includes('mob') ||
+          k.includes('cell')
+        ) {
+          const cleaned = cleanPhoneNumber(v);
+          if (cleaned) return cleaned;
+        }
+      }
+    }
+
+    // 3. Inspect raw row keys and values directly
+    for (const [k, v] of Object.entries(row)) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (
+          lk.includes('mobile') ||
+          lk.includes('phone') ||
+          lk.includes('contact') ||
+          lk.includes('whatsapp') ||
+          lk.includes('mob')
+        ) {
+          const cleaned = cleanPhoneNumber(v);
+          if (cleaned) return cleaned;
+        }
+      }
+    }
+
+    // 4. Value scan fallback: find any 10-digit number cell
+    for (const [k, v] of Object.entries(row)) {
+      if (v !== undefined && v !== null) {
+        const cleaned = cleanPhoneNumber(v);
+        const digits = cleaned.replace(/\D/g, '');
+        if (digits.length === 10 || (digits.length === 12 && digits.startsWith('91')) || (digits.length === 11 && digits.startsWith('0'))) {
+          const lk = k.toLowerCase();
+          if (!lk.includes('aadhar') && !lk.includes('roll') && !lk.includes('dob') && !lk.includes('date') && !lk.includes('class') && !lk.includes('admission') && !lk.includes('id')) {
+            return cleaned;
+          }
+        }
+      }
+    }
+
+    return '';
+  };
+
   const normalizeKeys = (row) => {
     const normalized = {};
     Object.keys(row).forEach(key => {
@@ -62,11 +164,11 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
   const mapStudentRow = (row, index) => {
     const n = normalizeKeys(row);
 
-    const fullName = n.fullname || n.name || n.studentname || n.student || `${n.firstname || ''} ${n.lastname || ''}`.trim() || `Student ${index + 1}`;
+    const fullName = n.fullname || n.name || n.studentname || n.namestudent || n.student || `${n.firstname || ''} ${n.lastname || ''}`.trim() || `Student ${index + 1}`;
     const studentClass = n.class || n.grade || n.standard || n.classgrade || n.section || 'Class 1';
-    const fatherName = n.fathername || n.father || n.parentname || n.parent || 'Parent';
-    const motherName = n.mothername || n.mother || '';
-    const phone = String(n.phone || n.mobile || n.contact || n.whatsapp || n.phoneno || n.mobileno || '').trim();
+    const fatherName = n.fathername || n.fthersname || n.fathersname || n.father || n.parentname || n.parent || 'Parent';
+    const motherName = n.mothername || n.mothersname || n.mother || '';
+    const phone = extractPhone(row, n);
     const email = n.email || n.emailaddress || '';
     const gender = n.gender || n.sex || 'Male';
     const dob = n.dob || n.dateofbirth || n.birthdate || '';
@@ -97,7 +199,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
 
     const fullName = n.fullname || n.name || n.teachername || n.teacher || `${n.firstname || ''} ${n.lastname || ''}`.trim() || `Teacher ${index + 1}`;
     const email = n.email || n.emailaddress || `${fullName.toLowerCase().replace(/\s+/g, '')}${index + 1}@school.com`;
-    const phone = String(n.phone || n.mobile || n.contact || n.whatsapp || '').trim();
+    const phone = extractPhone(row, n);
     const subject = n.subject || n.subjectspecialization || n.specialization || 'General';
     const qualification = n.qualification || n.degree || n.education || 'B.Ed';
     const salary = Number(n.salary || n.monthlysalary || n.pay || 25000);
@@ -136,16 +238,39 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, { type: 'array', cellDates: true });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const rawJson = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        // Parse sheet to json
+        let rawJson = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
 
         if (rawJson.length === 0) {
           toast.error("The selected Excel sheet appears to be empty.");
           setIsProcessing(false);
           return;
+        }
+
+        // Smart check: If row 1 is a title banner (common in school templates), locate real header row
+        const firstKeys = Object.keys(rawJson[0]);
+        const hasStandardHeaders = firstKeys.some(k =>
+          /name|student|father|class|mobile|phone|roll/i.test(k)
+        );
+
+        if (!hasStandardHeaders && rawJson.length > 1) {
+          const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+          let headerRowIndex = -1;
+          for (let r = 0; r < Math.min(rawRows.length, 5); r++) {
+            const rowText = (rawRows[r] || []).join(' ').toLowerCase();
+            if (rowText.includes('name') || rowText.includes('class') || rowText.includes('student') || rowText.includes('mobile')) {
+              headerRowIndex = r;
+              break;
+            }
+          }
+          if (headerRowIndex > 0) {
+            rawJson = XLSX.utils.sheet_to_json(ws, { range: headerRowIndex, defval: '', raw: false });
+          }
         }
 
         const headers = Object.keys(rawJson[0]);
@@ -171,7 +296,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
       }
     };
 
-    reader.readAsBinaryString(uploadedFile);
+    reader.readAsArrayBuffer(uploadedFile);
   };
 
   const handleTypeChange = (newType) => {
@@ -216,9 +341,39 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
       const data = response.data;
       setImportSummary(data);
 
-      toast.success(data.message || `Successfully imported ${data.importedCount} records!`);
+      // Tag each row with its final import status (Imported or Rejected)
+      const rejectedMap = new Map();
+      (data.rejected || []).forEach(rej => {
+        rejectedMap.set(rej.row, rej.reason);
+      });
 
-      if (onImportSuccess) {
+      const updatedRows = mappedRows.map((r, i) => {
+        const rowNum = i + 1;
+        if (rejectedMap.has(rowNum)) {
+          return {
+            ...r,
+            importStatus: 'rejected',
+            rejectReason: rejectedMap.get(rowNum)
+          };
+        } else {
+          return {
+            ...r,
+            importStatus: 'imported'
+          };
+        }
+      });
+      setMappedRows(updatedRows);
+      setShowPreview(true);
+
+      if (data.rejectedCount > 0 && data.importedCount === 0) {
+        toast.warn(`All ${data.rejectedCount} records were rejected as duplicates.`);
+      } else if (data.rejectedCount > 0) {
+        toast.info(`Imported ${data.importedCount} records. ${data.rejectedCount} duplicate records were rejected.`);
+      } else {
+        toast.success(data.message || `Successfully imported ${data.importedCount} records!`);
+      }
+
+      if (onImportSuccess && data.importedCount > 0) {
         onImportSuccess();
       }
 
@@ -442,9 +597,20 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                         </>
                       )}
                       <td className="py-1.5 px-3 text-center">
-                        {row.isValid ? (
-                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            ✅ Ready
+                        {row.importStatus === 'rejected' ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-[9px] font-black text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded cursor-help shadow-sm"
+                            title={row.rejectReason}
+                          >
+                            ❌ Rejected
+                          </span>
+                        ) : row.importStatus === 'imported' ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded shadow-sm">
+                            ✅ Imported
+                          </span>
+                        ) : row.isValid ? (
+                          <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                            Ready
                           </span>
                         ) : (
                           <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded">
@@ -461,17 +627,56 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
 
           {/* Import Summary Result Banner */}
           {importSummary && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-900 flex items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <FaCheckCircle className="text-emerald-600 shrink-0" />
-                <span className="font-bold">{importSummary.message}</span>
-              </div>
-              <button
-                onClick={resetImporter}
-                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shrink-0"
+            <div className="space-y-3">
+              <div
+                className={`border rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs ${
+                  importSummary.rejectedCount > 0
+                    ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                }`}
               >
-                Import Another
-              </button>
+                <div className="flex items-center gap-3">
+                  <div className="shrink-0 text-xl">
+                    {importSummary.rejectedCount > 0 ? '⚠️' : '✅'}
+                  </div>
+                  <div>
+                    <p className="font-black text-sm">{importSummary.message}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      ✅ Imported: <strong>{importSummary.importedCount || 0}</strong> &nbsp;|&nbsp;
+                      ❌ Rejected (Duplicates): <strong className="text-red-600">{importSummary.rejectedCount || 0}</strong> &nbsp;|&nbsp;
+                      Total Rows: {importSummary.totalRows || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={resetImporter}
+                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition shrink-0"
+                >
+                  Upload Another File
+                </button>
+              </div>
+
+              {/* Rejected Records Detailed List */}
+              {importSummary.rejected && importSummary.rejected.length > 0 && (
+                <div className="bg-rose-50/70 border border-rose-200 rounded-xl p-3.5 text-xs animate-fade-in">
+                  <p className="font-black text-rose-800 mb-2 flex items-center justify-between">
+                    <span>❌ Rejected Records ({importSummary.rejected.length} Duplicates Detected):</span>
+                    <span className="text-[10px] text-rose-500 font-normal">Skipped from import to prevent duplicates</span>
+                  </p>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                    {importSummary.rejected.map((rej, rIdx) => (
+                      <div key={rIdx} className="flex items-start justify-between bg-white p-2 rounded-lg border border-rose-100 text-[11px]">
+                        <div>
+                          <span className="font-bold text-slate-800">Row {rej.row}: {rej.name}</span>
+                          {rej.fatherName && <span className="text-slate-400"> (Father: {rej.fatherName})</span>}
+                        </div>
+                        <span className="text-rose-600 font-semibold text-[10px] pl-2 text-right">{rej.reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

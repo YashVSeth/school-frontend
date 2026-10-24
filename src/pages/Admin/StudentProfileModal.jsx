@@ -53,7 +53,7 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
 
   // Helper to format class name safely
   const className = student.class 
-    ? (typeof student.class === 'object' ? `${student.class.grade}-${student.class.section}` : "N/A")
+    ? (typeof student.class === 'object' ? `${student.class.grade}${student.class.section ? ` - ${student.class.section}` : ''}` : "N/A")
     : "Unassigned";
 
   // Helper for Full Name

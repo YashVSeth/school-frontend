@@ -22,6 +22,9 @@ import FinanceDashboard from './pages/Admin/FinanceDashboard';
 import FeeStructure from './pages/Admin/FeeStructure';
 import LeaveManagement from './pages/Admin/LeaveManagement';
 import ExpenseCalculator from './pages/Admin/ExpenseCalculator';
+import IDCardManagement from './pages/Admin/IDCardManagement';
+import ResultManagement from './pages/Admin/ResultManagement';
+import Settings from './pages/Admin/Settings';
 
 // Teacher Pages
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
@@ -70,12 +73,15 @@ function App() {
                 <Route path="students/add" element={<AddStudent />} />
                 <Route path="students/list" element={<StudentList />} />
                 <Route path="attendance" element={<AttendanceAdmin />} />
-                <Route path="fees" element={<Fees />} />
+                <Route path="fees" element={<FinanceDashboard />} />
                 <Route path="finance" element={<FinanceDashboard />} />
                 <Route path="expenses" element={<ExpenseCalculator />} />
                 <Route path="teachers" element={<Teachers />} />
-                <Route path="fee-structure" element={<FeeStructure />} />
+                <Route path="fee-structure" element={<FinanceDashboard />} />
                 <Route path="leaves" element={<LeaveManagement />} />
+                <Route path="id-cards" element={<IDCardManagement />} />
+                <Route path="results" element={<ResultManagement />} />
+                <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
             </ProtectedRoute>

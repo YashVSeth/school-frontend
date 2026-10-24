@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { 
   FaSearch, FaUserGraduate, FaTrash, FaEdit, FaEye, 
   FaFileExcel, FaWhatsapp, FaPhoneAlt, FaIdCard, FaLevelUpAlt, FaUsersCog,
-  FaFilter, FaEnvelope, FaEllipsisH, FaChevronDown
+  FaFilter, FaEnvelope, FaEllipsisH, FaChevronDown, FaSortAlphaDown
 } from 'react-icons/fa';
 import EditStudentModal from './EditStudentModal';
 import StudentProfileModal from './StudentProfileModal';
@@ -206,9 +206,9 @@ const StudentList = () => {
   const handleExportExcel = () => {
     if (filteredStudents.length === 0) return toast.warn("No data");
     const ws = XLSX.utils.json_to_sheet(filteredStudents.map(s => ({
+      "Roll No": s.rollNo || '',
       Name: `${s.firstName} ${s.lastName || ''}`,
-      StudentID: s.studentId,
-      Class: s.class?.grade ? `${s.class.grade}-${s.class.section}` : '',
+      Class: s.class?.grade ? `${s.class.grade}${s.class.section ? ` - ${s.class.section}` : ''}` : '',
       Father: s.fatherName,
       Phone: s.phone,
       Status: s.status || 'active',
@@ -229,13 +229,35 @@ const StudentList = () => {
     return cls ? `Class ${cls.grade}` : 'Batch';
   };
 
-  const filteredStudents = students.filter((s) => {
-    const fullName = `${s.firstName} ${s.lastName}`.toLowerCase();
-    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || s.studentId?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClass = selectedClass ? (s.class?._id === selectedClass || s.class === selectedClass) : true;
-    const matchesStatus = statusFilter ? (s.status || 'active') === statusFilter : true;
-    return matchesSearch && matchesClass && matchesStatus;
-  });
+  const handleReassignRollNumbers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${BASE_URL}/api/students/reassign-roll-numbers`, {
+        classId: selectedClass || 'all'
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success(res.data.message || "Roll numbers assigned alphabetically (A-Z)!");
+      loadInitialData();
+    } catch {
+      toast.error("Failed to reassign roll numbers");
+    }
+  };
+
+  const filteredStudents = students
+    .filter((s) => {
+      const fullName = `${s.firstName} ${s.lastName || ''}`.toLowerCase();
+      const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
+        String(s.rollNo || '').includes(searchTerm.toLowerCase()) ||
+        (s.fatherName && s.fatherName.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesClass = selectedClass ? (s.class?._id === selectedClass || s.class === selectedClass) : true;
+      const matchesStatus = statusFilter ? (s.status || 'active') === statusFilter : true;
+      return matchesSearch && matchesClass && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (a.rollNo && b.rollNo) return a.rollNo - b.rollNo;
+      if (a.rollNo) return -1;
+      if (b.rollNo) return 1;
+      return (a.firstName || '').localeCompare(b.firstName || '');
+    });
 
   return (
     <Layout>
@@ -246,10 +268,13 @@ const StudentList = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
            <div>
               <h1 className="text-3xl font-black text-slate-800 tracking-tight">Student Directory</h1>
-              <p className="text-slate-500 font-medium mt-1">Manage records & promotions</p>
+              <p className="text-slate-500 font-medium mt-1">Manage records, alphabetical roll numbers & promotions</p>
            </div>
            
            <div className="flex gap-2 flex-wrap">
+              <button onClick={handleReassignRollNumbers} className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold shadow-sm hover:shadow-md hover:border-blue-300 transition-all text-sm" title="Reassign roll numbers alphabetically (A to Z) for this class">
+                <FaSortAlphaDown className="text-blue-600" /> Sort Roll Nos (A-Z)
+              </button>
               <button onClick={handleExportExcel} className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold shadow-sm hover:shadow-md hover:border-red-200 transition-all text-sm">
                 <FaFileExcel className="text-green-600" /> Excel
               </button>
@@ -298,7 +323,7 @@ const StudentList = () => {
                 onChange={(e) => setSelectedClass(e.target.value)}
               >
                 <option value="">Grade</option>
-                {classes.map(c => <option key={c._id} value={c._id}>{c.grade} - {c.section}</option>)}
+                {classes.map(c => <option key={c._id} value={c._id}>{c.grade}{c.section ? ` - ${c.section}` : ''}</option>)}
               </select>
               <FaChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={10} />
             </div>
@@ -350,7 +375,7 @@ const StudentList = () => {
                     const fullName = `${s.firstName} ${s.lastName || ''}`;
                     const initials = getInitials(s.firstName, s.lastName);
                     const avatarColor = getAvatarColor(fullName);
-                    const gradeLabel = s.class?.grade ? `${s.class.grade}${s.class.section || ''}` : '—';
+                    const gradeLabel = s.class?.grade ? `${s.class.grade}${s.class.section ? ` - ${s.class.section}` : ''}` : '—';
                     const gradeColor = getGradeColor(s.class?.grade || '');
                     const attStats = attendanceMap[s._id];
                     const attPct = attStats?.percentage || 0;

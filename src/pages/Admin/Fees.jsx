@@ -8,11 +8,12 @@ import { toast } from 'react-toastify';
 import Sidebar from '../../components/Sidebar';
 import TransportModal from './TransportModal';
 
-const FREQUENCIES = ['Monthly', 'Quarterly', 'Yearly', 'One-time'];
+const FREQUENCIES = ['MONTHLY', 'QUARTERLY', 'HALF-YEARLY', 'YEARLY', 'ONE-TIME'];
 
 const Fees = () => {
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [academicYear, setAcademicYear] = useState('2026-27');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -115,7 +116,7 @@ const Fees = () => {
         classId: selectedClass._id,
         mandatoryFees,
         optionalFees,
-        academicYear: '2026-27'
+        academicYear
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -131,10 +132,12 @@ const Fees = () => {
   // --- Calculations ---
   const calculateYearlyTotal = (fees) => {
     return fees.reduce((total, fee) => {
+      const freq = (fee.frequency || 'MONTHLY').toString().toUpperCase();
       let multiplier = 1;
-      if (fee.frequency === 'Monthly') multiplier = 12;
-      if (fee.frequency === 'Quarterly') multiplier = 4;
-      return total + (fee.amount * multiplier);
+      if (freq === 'MONTHLY') multiplier = 12;
+      else if (freq === 'QUARTERLY') multiplier = 4;
+      else if (freq.includes('HALF')) multiplier = 2;
+      return total + ((Number(fee.amount) || 0) * multiplier);
     }, 0);
   };
 

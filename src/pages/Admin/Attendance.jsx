@@ -111,7 +111,7 @@ const Attendance = () => {
             >
               <option value="">-- Choose Class --</option>
               {classes.map((cls) => (
-                <option key={cls._id} value={cls._id}>{cls.grade} - {cls.section}</option>
+                <option key={cls._id} value={cls._id}>{cls.grade}{cls.section ? ` - ${cls.section}` : ''}</option>
               ))}
             </select>
           </div>

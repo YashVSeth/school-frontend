@@ -137,7 +137,7 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
         <div className="px-6 py-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-800">Manage Class Details</h2>
-            <p className="text-sm text-slate-500 font-medium">Class: {classData.grade} - {classData.section}</p>
+            <p className="text-sm text-slate-500 font-medium">Class: {classData.grade}{classData.section ? ` - ${classData.section}` : ''}</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-red-500 p-2 rounded-full">
             <FaTimes size={20}/>

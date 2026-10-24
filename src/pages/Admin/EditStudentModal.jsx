@@ -195,7 +195,7 @@ const EditStudentModal = ({ isOpen, onClose, student, refreshData, classes = [] 
                         className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-white transition">
                         <option value="">Select Class</option>
                         {classes && classes.map(cls => (
-                            <option key={cls._id} value={cls._id}>{cls.grade} - {cls.section}</option>
+                            <option key={cls._id} value={cls._id}>{cls.grade}{cls.section ? ` - ${cls.section}` : ''}</option>
                         ))}
                     </select>
                 </div>

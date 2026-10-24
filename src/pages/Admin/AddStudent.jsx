@@ -313,7 +313,7 @@ const AddStudent = () => {
                 <select name="class" value={formData.class} onChange={handleChange} required className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-red-500">
                   <option value="">Select Class</option>
                   {classes.map((cls) => (
-                    <option key={cls._id} value={cls._id}>{cls.grade} - {cls.section}</option>
+                    <option key={cls._id} value={cls._id}>{cls.grade}{cls.section ? ` - ${cls.section}` : ''}</option>
                   ))}
                 </select>
               </div>
