@@ -5,12 +5,19 @@ import {
   FaCheckCircle, FaExclamationCircle, FaReceipt, FaPrint,
   FaWhatsapp, FaCalculator, FaTimes, FaUserGraduate,
   FaHistory, FaClock, FaCheck, FaQrcode, FaArrowRight,
-  FaRedo, FaCertificate, FaPhoneAlt, FaEdit, FaSlidersH
+  FaRedo, FaCertificate, FaPhoneAlt, FaEdit, FaSlidersH,
+  FaChevronDown
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
-const QuickFeeCollection = ({ onPaymentSuccess }) => {
+const QuickFeeCollection = ({ onPaymentSuccess, academicYear = '2026-27' }) => {
   const BASE_URL = import.meta.env.VITE_API_URL;
+
+  // Class Filter & Class Students State
+  const [classes, setClasses] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [classStudents, setClassStudents] = useState([]);
+  const [loadingClassStudents, setLoadingClassStudents] = useState(false);
 
   // Student Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +42,59 @@ const QuickFeeCollection = ({ onPaymentSuccess }) => {
   const [receipt, setReceipt] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
+  // Load Classes List on Mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/classes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const raw = Array.isArray(res.data) ? res.data : [];
+      const gradeOrder = (grade) => {
+        if (!grade) return 999;
+        const g = grade.toString().toLowerCase().trim();
+        if (g.includes('play') || g.includes('pg')) return 1;
+        if (g.includes('nur')) return 2;
+        if (g.includes('lkg')) return 3;
+        if (g.includes('ukg') || g.includes('kg')) return 4;
+        const match = g.match(/\d+/);
+        if (match) return 10 + parseInt(match[0], 10);
+        return 100;
+      };
+      const sorted = [...raw].sort((a, b) => gradeOrder(a.grade) - gradeOrder(b.grade));
+      setClasses(sorted);
+    } catch {
+      // silent
+    }
+  };
+
+  const handleClassChange = async (clsId) => {
+    setSelectedClassId(clsId);
+    if (!clsId) {
+      setClassStudents([]);
+      return;
+    }
+
+    setLoadingClassStudents(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/students?classId=${clsId}&status=active`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const list = Array.isArray(res.data) ? res.data : [];
+      setClassStudents(list);
+    } catch {
+      toast.error("Failed to load students for this class");
+      setClassStudents([]);
+    } finally {
+      setLoadingClassStudents(false);
+    }
+  };
+
   // Search input handler
   const handleSearchChange = async (e) => {
     const val = e.target.value;
@@ -46,7 +106,8 @@ const QuickFeeCollection = ({ onPaymentSuccess }) => {
     setSearching(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${BASE_URL}/api/students?search=${encodeURIComponent(val)}`, {
+      const classQuery = selectedClassId ? `&classId=${selectedClassId}` : '';
+      const res = await axios.get(`${BASE_URL}/api/students?search=${encodeURIComponent(val)}${classQuery}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSearchResults(res.data.students || res.data || []);
@@ -70,8 +131,8 @@ const QuickFeeCollection = ({ onPaymentSuccess }) => {
       const classId = std.class?._id || std.class;
 
       const [invRes, structRes] = await Promise.all([
-        axios.get(`${BASE_URL}/api/fees/invoices/${std._id}?academicYear=2026-27`, { headers }).catch(() => ({ data: [] })),
-        classId ? axios.get(`${BASE_URL}/api/fee-structure/${classId}?academicYear=2026-27`, { headers }).catch(() => ({ data: null })) : { data: null }
+        axios.get(`${BASE_URL}/api/fees/invoices/${std._id}?academicYear=${academicYear}`, { headers }).catch(() => ({ data: [] })),
+        classId ? axios.get(`${BASE_URL}/api/fee-structure/${classId}?academicYear=${academicYear}`, { headers }).catch(() => ({ data: null })) : { data: null }
       ]);
 
       const invoices = invRes.data || [];
@@ -270,7 +331,7 @@ const QuickFeeCollection = ({ onPaymentSuccess }) => {
               studentId: student._id,
               title: item.name,
               amount: Number(item.fullAmount || item.amount) || 0,
-              academicYear: '2026-27'
+              academicYear: academicYear
             }, { headers });
             if (invRes.data?.invoice?._id) {
               invId = invRes.data.invoice._id;
@@ -297,7 +358,7 @@ const QuickFeeCollection = ({ onPaymentSuccess }) => {
         invoicesToPay: invoiceIds,
         itemBreakdown,
         remarks: remarks || '',
-        academicYear: '2026-27'
+        academicYear: academicYear
       }, { headers });
 
       const newReceipt = {
@@ -352,30 +413,89 @@ const QuickFeeCollection = ({ onPaymentSuccess }) => {
         {/* ═══ LEFT 7 COLS: STUDENT SEARCH & DUES WITH PARTIAL PAYMENTS ═══ */}
         <div className="lg:col-span-7 space-y-5">
 
-          {/* 1. Fast Student Search Bar */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+          {/* 1. Class Filter & Student Selection */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
             <div className="flex justify-between items-center">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                1. Search Student
+                1. Class Filter & Student Selection
               </span>
               {student && (
-                <button onClick={handleClearStudent} className="text-xs font-bold text-red-600 hover:underline">
-                  Clear & Search Another
+                <button onClick={handleClearStudent} className="text-xs font-bold text-red-600 hover:underline cursor-pointer">
+                  Clear Selection
                 </button>
               )}
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Class Filter Dropdown */}
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 block">
+                  Class Filter
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => handleClassChange(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-red-500 focus:bg-white transition-all appearance-none cursor-pointer shadow-inner"
+                  >
+                    <option value="">-- All Classes / Select Class --</option>
+                    {classes.map(c => (
+                      <option key={c._id} value={c._id}>
+                        {c.grade} {c.section ? `(${c.section})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Student Dropdown for Selected Class */}
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 block">
+                  Select Student
+                </label>
+                <div className="relative">
+                  <select
+                    value={student?._id || ''}
+                    onChange={(e) => {
+                      const found = classStudents.find(s => s._id === e.target.value);
+                      if (found) handleSelectStudent(found);
+                    }}
+                    disabled={!selectedClassId || loadingClassStudents}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-red-500 focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-50 shadow-inner"
+                  >
+                    <option value="">
+                      {!selectedClassId
+                        ? '← Select a Class first'
+                        : loadingClassStudents
+                          ? 'Loading students...'
+                          : classStudents.length === 0
+                            ? 'No students found'
+                            : `-- Choose Student (${classStudents.length}) --`}
+                    </option>
+                    {classStudents.map(s => (
+                      <option key={s._id} value={s._id}>
+                        {s.rollNo ? `Roll ${s.rollNo} - ` : ''}{s.firstName} {s.lastName || ''} ({s.studentId})
+                      </option>
+                    ))}
+                  </select>
+                  <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Search Bar */}
             <div className="relative">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Type Student Name, Student ID (e.g. STD-...), or Roll No..."
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner placeholder:font-normal placeholder:text-slate-400"
+                placeholder={selectedClassId ? "Or search student name / roll no in this class..." : "Or type student name, student ID, or roll no..."}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner placeholder:font-normal placeholder:text-slate-400"
               />
               {searching && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 animate-pulse">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 animate-pulse">
                   Searching...
                 </span>
               )}

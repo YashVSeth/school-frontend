@@ -21,6 +21,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const isActive = (path) => location.pathname === path;
   const isStudentSection = location.pathname.includes('/students');
+  const isFeeSection = location.pathname.includes('/fees') || location.pathname.includes('/fee-structure') || location.pathname.includes('/finance');
 
   // Helper to close sidebar on mobile when a link is clicked
   const handleLinkClick = () => {
@@ -123,16 +124,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             )}
           </div>
 
-          {/* ✅ NEW FINANCE DASHBOARD LINK */}
+          {/* ✅ FEES & FEE STRUCTURE LINK */}
           <Link
             to="/admin/finance"
             onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/finance')
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isFeeSection
               ? 'bg-[#800000] text-white shadow-lg'
               : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
-            <FaWallet />
+            <FaWallet className={isFeeSection ? 'text-red-400' : ''} />
             <span className="font-semibold">Fees & Fee Structure</span>
           </Link>
 

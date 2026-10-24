@@ -73,11 +73,11 @@ function App() {
                 <Route path="students/add" element={<AddStudent />} />
                 <Route path="students/list" element={<StudentList />} />
                 <Route path="attendance" element={<AttendanceAdmin />} />
-                <Route path="fees" element={<FinanceDashboard />} />
-                <Route path="finance" element={<FinanceDashboard />} />
+                <Route path="fees" element={<FinanceDashboard initialTab="collect" />} />
+                <Route path="fee-structure" element={<FinanceDashboard initialTab="structure" />} />
+                <Route path="finance" element={<FinanceDashboard initialTab="collect" />} />
                 <Route path="expenses" element={<ExpenseCalculator />} />
                 <Route path="teachers" element={<Teachers />} />
-                <Route path="fee-structure" element={<FinanceDashboard />} />
                 <Route path="leaves" element={<LeaveManagement />} />
                 <Route path="id-cards" element={<IDCardManagement />} />
                 <Route path="results" element={<ResultManagement />} />

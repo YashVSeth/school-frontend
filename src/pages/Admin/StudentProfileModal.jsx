@@ -89,8 +89,8 @@ const StudentProfileModal = ({ isOpen, onClose, student }) => {
               <h2 className="text-3xl font-bold">{fullName}</h2>
               
               <div className="flex flex-wrap justify-center md:justify-start gap-3 text-slate-300 text-sm">
-                <span className="bg-slate-700 px-3 py-1 rounded-full font-mono border border-slate-600">
-                    ID: {student.studentId || 'N/A'}
+                <span className="bg-slate-700 px-3 py-1 rounded-full font-bold border border-slate-600 text-amber-300">
+                    Roll No: #{student.rollNo || '—'}
                 </span>
                 <span className="flex items-center gap-2 px-2">
                     <FaUserGraduate className="text-red-400"/> Class: {className}

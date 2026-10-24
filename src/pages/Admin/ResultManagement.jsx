@@ -376,7 +376,7 @@ const ResultManagement = () => {
                           <td className="py-3 pl-2 font-bold text-slate-500">{s.rollNo || '—'}</td>
                           <td className="py-3 font-bold text-slate-900">
                             <p>{s.firstName} {s.lastName || ''}</p>
-                            <p className="text-[10px] text-slate-400 font-mono font-normal">{s.studentId}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">Roll: #{s.rollNo || '—'}</p>
                           </td>
 
                           {/* Subject Scores */}
@@ -469,7 +469,7 @@ const ResultManagement = () => {
                 <div>
                   <p className="text-slate-400 font-bold text-[9px] uppercase">Student Name</p>
                   <p className="font-black text-slate-900">{selectedReportStudent.firstName} {selectedReportStudent.lastName || ''}</p>
-                  <p className="text-[10px] text-slate-500">Student ID: {selectedReportStudent.studentId}</p>
+                  <p className="text-[10px] text-slate-500 font-bold">Roll: #{selectedReportStudent.rollNo || '—'}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-slate-400 font-bold text-[9px] uppercase">Class & Roll</p>

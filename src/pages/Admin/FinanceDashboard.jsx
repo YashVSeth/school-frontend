@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
   FaMoneyBillWave, FaClipboardList, FaExclamationTriangle,
@@ -56,11 +57,31 @@ const PRESET_TEMPLATES = {
   ]
 };
 
-const FinanceDashboard = () => {
+const FinanceDashboard = ({ initialTab }) => {
   const BASE_URL = import.meta.env.VITE_API_URL;
+  const location = useLocation();
+
+  const resolveTab = () => {
+    if (initialTab) return initialTab;
+    if (location.pathname.includes('fee-structure') || location.pathname.includes('structure')) return 'structure';
+    if (location.pathname.includes('defaulter')) return 'defaulters';
+    if (location.pathname.includes('ledger')) return 'ledger';
+    return 'collect';
+  };
+
   const [academicYear, setAcademicYear] = useState('2026-27');
-  const [activeTab, setActiveTab] = useState('collect'); // 'collect' | 'structure' | 'defaulters' | 'ledger'
+  const [activeTab, setActiveTab] = useState(resolveTab);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    } else if (location.pathname.includes('fee-structure')) {
+      setActiveTab('structure');
+    } else if (location.pathname.includes('fees')) {
+      setActiveTab('collect');
+    }
+  }, [initialTab, location.pathname]);
 
   // Global Financial Analytics
   const [stats, setStats] = useState({
@@ -408,6 +429,28 @@ const FinanceDashboard = () => {
     }
   };
 
+  const [applying, setApplying] = useState(false);
+  const handleApplyStructureToStudents = async () => {
+    if (!selectedClassId) return;
+    const clsName = selectedClassObj?.grade || 'this class';
+    if (!window.confirm(`Deploy fee structure to all active students in ${clsName}? This will generate their mandatory fee invoices and update fee balances for Session ${academicYear}.`)) return;
+
+    setApplying(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${BASE_URL}/api/fee-structure/apply/${selectedClassId}`, {
+        academicYear
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success(res.data?.message || `Fee structure successfully deployed to ${clsName}!`);
+      fetchGlobalStats();
+      fetchDefaulters();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to deploy fee structure to students");
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const applyPreset = (presetName) => {
     const tmpl = PRESET_TEMPLATES[presetName];
     if (!tmpl) return;
@@ -542,7 +585,7 @@ const FinanceDashboard = () => {
 
           {/* ═════════════ TAB 1: QUICK FEE COLLECTION ═════════════ */}
           {activeTab === 'collect' && (
-            <QuickFeeCollection onPaymentSuccess={() => { fetchGlobalStats(); fetchDefaulters(); }} />
+            <QuickFeeCollection academicYear={academicYear} onPaymentSuccess={() => { fetchGlobalStats(); fetchDefaulters(); }} />
           )}
 
           {/* ═════════════ TAB 2: FEE STRUCTURE BUILDER ═════════════ */}
@@ -559,7 +602,7 @@ const FinanceDashboard = () => {
                       <button
                         key={tmpl}
                         onClick={() => applyPreset(tmpl)}
-                        className="px-2.5 py-1 bg-slate-50 hover:bg-red-50 hover:border-red-200 border border-slate-200 text-slate-700 hover:text-red-700 rounded-lg text-[10px] font-bold transition-colors"
+                        className="px-2.5 py-1 bg-slate-50 hover:bg-red-50 hover:border-red-200 border border-slate-200 text-slate-700 hover:text-red-700 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
                       >
                         + {tmpl}
                       </button>
@@ -574,7 +617,7 @@ const FinanceDashboard = () => {
                       <button
                         key={c._id}
                         onClick={() => setSelectedClassId(c._id)}
-                        className={`px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border shrink-0 ${
+                        className={`px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
                           isSelected
                             ? 'bg-red-600 border-red-600 text-white shadow-sm scale-[1.02]'
                             : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -600,7 +643,7 @@ const FinanceDashboard = () => {
 
                     <button
                       onClick={() => setIsAddFeeModalOpen(true)}
-                      className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors"
+                      className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <FaPlusCircle size={12} /> Add Fee Head
                     </button>
@@ -658,7 +701,7 @@ const FinanceDashboard = () => {
                               {/* Delete button */}
                               <button
                                 onClick={() => setCurrentMandatoryFees(prev => prev.filter((_, i) => i !== idx))}
-                                className="p-2 text-slate-300 hover:text-red-600 transition-colors"
+                                className="p-2 text-slate-300 hover:text-red-600 transition-colors cursor-pointer"
                               >
                                 <FaTrash size={12} />
                               </button>
@@ -690,14 +733,25 @@ const FinanceDashboard = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleSaveClassStructure}
-                    disabled={structureSaving}
-                    className="w-full py-3.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl font-black text-sm transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2"
-                  >
-                    <FaRegSave />
-                    {structureSaving ? 'Saving Changes...' : `Save ${selectedClassObj?.grade} Structure`}
-                  </button>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleSaveClassStructure}
+                      disabled={structureSaving}
+                      className="w-full py-3.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl font-black text-sm transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <FaRegSave />
+                      {structureSaving ? 'Saving Changes...' : `Save ${selectedClassObj?.grade || 'Class'} Structure`}
+                    </button>
+
+                    <button
+                      onClick={handleApplyStructureToStudents}
+                      disabled={applying || structureSaving}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-black text-xs transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <FaMagic />
+                      {applying ? 'Deploying to Students...' : `Deploy to All ${selectedClassObj?.grade || 'Class'} Students`}
+                    </button>
+                  </div>
                 </div>
 
               </div>

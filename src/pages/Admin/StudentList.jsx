@@ -362,6 +362,7 @@ const StudentList = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-100">
+                    <th className="px-4 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-20">Roll No</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Student</th>
                     <th className="px-4 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Grade</th>
                     <th className="px-4 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Attendance</th>
@@ -388,6 +389,13 @@ const StudentList = () => {
                         className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors group"
                         style={{ animationDelay: `${index * 30}ms` }}
                       >
+                        {/* ─── ROLL NO ─── */}
+                        <td className="px-4 py-4 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[32px] h-8 px-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-black text-slate-700">
+                            {s.rollNo ? s.rollNo : '—'}
+                          </span>
+                        </td>
+
                         {/* ─── STUDENT ─── */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
@@ -409,7 +417,7 @@ const StudentList = () => {
                             <div className="min-w-0">
                               <p className="font-bold text-slate-800 text-sm truncate">{fullName}</p>
                               <p className="text-xs text-slate-400 font-medium">
-                                {s.studentId}{s.dob ? ` · DOB ${formatDOB(s.dob)}` : ''}
+                                {s.dob ? `DOB: ${formatDOB(s.dob)}` : (s.phone ? `Ph: ${s.phone}` : 'Active Student')}
                               </p>
                             </div>
                           </div>
