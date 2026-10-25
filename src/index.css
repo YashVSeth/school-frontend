@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  /* Override default red to match the requested Logo custom Maroon: #ab0035 */
-  --color-red-50: #fbf0f3;
-  --color-red-100: #f5dbe3;
-  --color-red-200: #ecbccc;
-  --color-red-300: #e092ae;
-  --color-red-400: #d1628d;
-  --color-red-500: #c13d71;
-  --color-red-600: #ab0035; /* Primary Target Color */
-  --color-red-700: #8f0631;
-  --color-red-800: #780a2d;
-  --color-red-900: #650d29;
-  --color-red-950: #380312;
+  /* Override default red to match the requested Logo custom Maroon: #8f0631 */
+  --color-red-50: #fbf0f4;
+  --color-red-100: #f6dce4;
+  --color-red-200: #ecb8c8;
+  --color-red-300: #de8fa8;
+  --color-red-400: #cd6285;
+  --color-red-500: #b53361;
+  --color-red-600: #8f0631; /* Primary Target Color */
+  --color-red-700: #750426;
+  --color-red-800: #5f031e;
+  --color-red-900: #4e051a;
+  --color-red-950: #2f010e;
 }
 
 /* Keep your custom animations below */

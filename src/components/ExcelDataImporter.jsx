@@ -8,12 +8,12 @@ import {
   FaMagic, FaSyncAlt, FaArrowRight, FaTable, FaChevronDown, FaChevronUp
 } from 'react-icons/fa';
 
-const ExcelDataImporter = ({ onImportSuccess }) => {
+const ExcelDataImporter = ({ onImportSuccess, defaultType = 'students' }) => {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState('');
   const [parsedData, setParsedData] = useState([]);
-  const [detectedType, setDetectedType] = useState('students'); // 'students' | 'teachers'
-  const [autoDetectedLabel, setAutoDetectedLabel] = useState('');
+  const [detectedType, setDetectedType] = useState(defaultType); // 'students' | 'teachers'
+  const [autoDetectedLabel, setAutoDetectedLabel] = useState(defaultType === 'teachers' ? 'Teachers' : 'Students');
   const [mappedRows, setMappedRows] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -35,18 +35,24 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
     let studentScore = 0;
     let teacherScore = 0;
 
-    ['student', 'roll', 'father', 'fther', 'mother', 'class', 'grade', 'admission', 'aadhar', 'dob', 'parent', 'mobile'].forEach(kw => {
+    ['student', 'roll', 'father', 'fther', 'mother', 'class', 'grade', 'admission', 'parent', 'scholar'].forEach(kw => {
       if (headerStr.includes(kw)) studentScore += 2;
     });
 
-    ['teacher', 'salary', 'qualification', 'specialization', 'subject', 'designation', 'experience', 'joining'].forEach(kw => {
+    ['teacher', 'faculty', 'salary', 'qualification', 'specialization', 'subject', 'designation', 'experience', 'joining', 'staff', 'department', 'university', 'lecturer', 'headmaster'].forEach(kw => {
       if (headerStr.includes(kw)) teacherScore += 2;
     });
 
+    if (defaultType === 'teachers' && teacherScore >= studentScore) {
+      return { type: 'teachers', label: 'Teachers' };
+    }
+
     if (teacherScore > studentScore) {
       return { type: 'teachers', label: 'Teachers' };
-    } else {
+    } else if (studentScore > teacherScore) {
       return { type: 'students', label: 'Students' };
+    } else {
+      return { type: defaultType, label: defaultType === 'teachers' ? 'Teachers' : 'Students' };
     }
   };
 
@@ -338,31 +344,132 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
     };
   };
 
+  const extractTeacherName = (row, n) => {
+    // 1. Direct normalized key lookups
+    const nameKeys = [
+      'fullname', 'teachername', 'teachersname', 'facultyname', 'staffname',
+      'name', 'nameofteacher', 'nameoftheteacher', 'candidatename', 'teacher',
+      'adhythapakname', 'shikshakname'
+    ];
+    for (const k of nameKeys) {
+      if (n[k] !== undefined && n[k] !== null && String(n[k]).trim() !== '') {
+        return String(n[k]).trim();
+      }
+    }
+
+    // 2. First + Last name
+    const first = String(n.firstname || n.fname || '').trim();
+    const last = String(n.lastname || n.lname || n.surname || '').trim();
+    if (first || last) return `${first} ${last}`.trim();
+
+    // 3. Fuzzy search: inspect any key containing 'teacher', 'faculty', 'staff' or 'name'
+    for (const [k, v] of Object.entries(row)) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (
+          (lk.includes('teacher') || lk.includes('faculty') || lk.includes('staff') || lk.includes('name')) &&
+          !lk.includes('father') && !lk.includes('mother') &&
+          !lk.includes('student') && !lk.includes('parent') &&
+          !lk.includes('school') && !lk.includes('branch')
+        ) {
+          return String(v).trim();
+        }
+      }
+    }
+
+    return '';
+  };
+
   const mapTeacherRow = (row, index) => {
     const n = normalizeKeys(row);
 
-    const fullName = n.fullname || n.name || n.teachername || n.teacher || `${n.firstname || ''} ${n.lastname || ''}`.trim() || `Teacher ${index + 1}`;
-    const email = n.email || n.emailaddress || `${fullName.toLowerCase().replace(/\s+/g, '')}${index + 1}@school.com`;
+    const fullName = extractTeacherName(row, n);
     const phone = extractPhone(row, n);
-    const subject = n.subject || n.subjectspecialization || n.specialization || 'General';
-    const qualification = n.qualification || n.degree || n.education || 'B.Ed';
-    const salary = Number(n.salary || n.monthlysalary || n.pay || 25000);
-    const gender = n.gender || n.sex || 'Male';
-    const experience = n.experience || n.exp || '1 Year';
-    const address = n.address || n.city || '';
+
+    // Email extraction or generation
+    let email = String(n.email || n.emailaddress || n.mailid || n.mail || '').trim().toLowerCase();
+    if (!email && fullName) {
+      const cleanName = fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      email = `${cleanName}${index + 1}@school.com`;
+    }
+
+    // Gender standardization
+    let rawGender = String(n.gender || n.sex || '').trim();
+    let gender = 'Male';
+    if (/^f/i.test(rawGender) || /female/i.test(rawGender) || /woman/i.test(rawGender)) {
+      gender = 'Female';
+    } else if (/^m/i.test(rawGender) || /male/i.test(rawGender) || /man/i.test(rawGender)) {
+      gender = 'Male';
+    } else if (rawGender) {
+      gender = rawGender;
+    }
+
+    // Subject / Specialization
+    const subject = String(
+      n.subject || n.specialization || n.subjectspecialization || 
+      n.teachingsubject || n.department || n.discipline || 'General'
+    ).trim();
+
+    // Highest Qualification
+    const qualification = String(
+      n.highestqualification || n.qualification || n.degree || 
+      n.education || n.academicqualification || 'B.Ed'
+    ).trim();
+
+    // University / Institute
+    const university = String(n.university || n.college || n.board || n.institute || '').trim();
+
+    // Experience
+    const experience = String(n.experience || n.exp || n.teachingexperience || n.totalexperience || '1 Year').trim();
+
+    // Base Salary
+    let rawSalary = n.basesalary !== undefined ? n.basesalary : (n.salary !== undefined ? n.salary : (n.monthlysalary || n.basicpay || n.pay || n.ctc));
+    let salary = 25000;
+    if (rawSalary !== undefined && rawSalary !== null && String(rawSalary).trim() !== '') {
+      const parsedNum = Number(String(rawSalary).replace(/[^0-9.]/g, ''));
+      if (!isNaN(parsedNum) && parsedNum > 0) salary = parsedNum;
+    }
+
+    // Date of Birth
+    const dob = String(n.dob || n.dateofbirth || n.birthdate || '').trim();
+
+    // Aadhaar Number
+    const aadharNo = String(n.aadhaarnumber || n.aadharno || n.aadhar || n.uid || n.aadhaar || '').trim();
+
+    // Blood Group
+    const bloodGroup = String(n.bloodgroup || n.blood || n.bg || '').trim().toUpperCase();
+
+    // Permanent Address
+    const address = String(n.permanentaddress || n.address || n.city || n.residentialaddress || '').trim();
+
+    // Remarks & Extra Duties
+    const remarks = String(n.remarks || n.remark || n.notes || '').trim();
+    const extraDuties = String(n.extraduties || n.duty || 'No').trim();
 
     const isValid = Boolean(fullName && fullName.trim() !== '');
 
     return {
-      fullName,
+      fullName: fullName || `Teacher ${index + 1}`,
+      rawHasName: Boolean(fullName && fullName.trim() !== ''),
       email,
       phone: phone || '0000000000',
-      subject,
-      qualification,
-      salary,
       gender,
+      dob,
+      subject,
+      specialization: subject,
+      qualification,
+      highestQualification: qualification,
+      university,
       experience,
+      salary,
+      baseSalary: salary,
+      aadhaarNumber: aadharNo,
+      aadharNo,
+      bloodGroup,
       address,
+      permanentAddress: address,
+      remarks,
+      extraDuties,
       isValid,
       _sourceSheet: row._sourceSheet || ''
     };
@@ -402,7 +509,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
       let headerRowIndex = -1;
       for (let r = 0; r < Math.min(rawRows.length, 6); r++) {
         const rowText = (rawRows[r] || []).join(' ').toLowerCase();
-        if (rowText.includes('name') || rowText.includes('class') || rowText.includes('student') || rowText.includes('mobile')) {
+        if (rowText.includes('name') || rowText.includes('class') || rowText.includes('student') || rowText.includes('teacher') || rowText.includes('mobile') || rowText.includes('subject') || rowText.includes('salary')) {
           headerRowIndex = r;
           break;
         }
@@ -415,18 +522,21 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
     // Filter out rows that are actually repeated header rows, title banners, or blank rows with just serial numbers
     const cleanedRows = rawJson.filter(row => {
       const n = normalizeKeys(row);
-      const name = extractStudentName(row, n);
+      const name = extractStudentName(row, n) || extractTeacherName(row, n);
       const phone = extractPhone(row, n);
       const father = n.fathername || n.father || n.fathersname || '';
       const cls = n.class || n.grade || n.standard || n.std || '';
+      const subject = n.subject || n.specialization || n.subjectspecialization || '';
+      const qualification = n.qualification || n.highestqualification || n.degree || '';
 
-      // If a row has NO student name, NO phone, NO father name, and NO class, it is an empty/blank row
-      if (!name && !phone && !father && !cls) return false;
+      // If a row has NO name, NO phone, NO father name, NO class, and NO subject/qualification, it is an empty/blank row
+      if (!name && !phone && !father && !cls && !subject && !qualification) return false;
 
       // Filter out repeated table headers
       const values = Object.values(row).map(v => String(v).trim().toLowerCase()).join(' ');
       if (values.includes('student name') && values.includes('father name')) return false;
       if (values.includes('full name') && values.includes('phone')) return false;
+      if (values.includes('teacher name') && (values.includes('subject') || values.includes('salary') || values.includes('email'))) return false;
       return true;
     });
 
@@ -646,6 +756,8 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
           "Email": "aarav.parent@gmail.com",
           "Gender": "Male",
           "Date of Birth": "2010-05-15",
+          "Blood Group": "B+",
+          "Aadhaar Number": "548912345678",
           "Address": "Civil Lines, Prayagraj"
         },
         {
@@ -656,6 +768,8 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
           "Email": "ananya.parent@gmail.com",
           "Gender": "Female",
           "Date of Birth": "2010-08-22",
+          "Blood Group": "O+",
+          "Aadhaar Number": "658998765432",
           "Address": "Tagore Town, Prayagraj"
         }
       ];
@@ -666,11 +780,33 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
           "Full Name": "Amit Kumar Mishra",
           "Email": "amit.mishra@school.com",
           "Phone": "9876501234",
-          "Subject": "Mathematics",
-          "Qualification": "M.Sc, B.Ed",
-          "Salary": 32000,
           "Gender": "Male",
-          "Address": "George Town, Prayagraj"
+          "Date of Birth": "1988-04-12",
+          "Subject": "Mathematics",
+          "Highest Qualification": "M.Sc, B.Ed",
+          "University": "Allahabad University",
+          "Experience": "5 Years",
+          "Monthly Salary": 35000,
+          "Aadhaar Number": "123456789012",
+          "Blood Group": "B+",
+          "Permanent Address": "12/4 George Town, Prayagraj",
+          "Remarks": "Senior Mathematics Faculty"
+        },
+        {
+          "Full Name": "Pooja Sharma",
+          "Email": "pooja.sharma@school.com",
+          "Phone": "9876505678",
+          "Gender": "Female",
+          "Date of Birth": "1992-09-20",
+          "Subject": "English Literature",
+          "Highest Qualification": "M.A, B.Ed",
+          "University": "BHU Varanasi",
+          "Experience": "3 Years",
+          "Monthly Salary": 30000,
+          "Aadhaar Number": "987654321098",
+          "Blood Group": "O+",
+          "Permanent Address": "45 Civil Lines, Prayagraj",
+          "Remarks": "Class 10 Faculty"
         }
       ];
       name = "Sample_Teachers_Template.xlsx";
@@ -849,9 +985,10 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                       </>
                     ) : (
                       <>
-                        <th className="py-2 px-3">Email</th>
-                        <th className="py-2 px-3">Subject</th>
-                        <th className="py-2 px-3">Salary</th>
+                        <th className="py-2 px-3">Phone</th>
+                        <th className="py-2 px-3">Subject / Specialization</th>
+                        <th className="py-2 px-3">Qualification</th>
+                        <th className="py-2 px-3">Base Salary</th>
                       </>
                     )}
                     <th className="py-2 px-3 text-center">Status</th>
@@ -868,7 +1005,12 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                           </span>
                         </td>
                       )}
-                      <td className="py-1.5 px-3 font-bold text-slate-800">{row.fullName}</td>
+                      <td className="py-1.5 px-3 font-bold text-slate-800">
+                        <div>{row.fullName}</div>
+                        {detectedType === 'teachers' && row.email && (
+                          <div className="text-[10px] text-slate-400 font-normal">{row.email}</div>
+                        )}
+                      </td>
                       {detectedType === 'students' ? (
                         <>
                           <td className="py-1.5 px-3 text-red-600 font-bold">{row.class}</td>
@@ -877,9 +1019,17 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                         </>
                       ) : (
                         <>
-                          <td className="py-1.5 px-3 text-slate-500">{row.email}</td>
-                          <td className="py-1.5 px-3 text-blue-600 font-bold">{row.subject}</td>
-                          <td className="py-1.5 px-3 font-bold">₹{row.salary}</td>
+                          <td className="py-1.5 px-3 text-slate-700">{row.phone}</td>
+                          <td className="py-1.5 px-3 text-blue-600 font-bold">{row.specialization || row.subject}</td>
+                          <td className="py-1.5 px-3 text-slate-600">
+                            <span>{row.highestQualification || row.qualification}</span>
+                            {row.experience && (
+                              <span className="text-[10px] text-slate-400 ml-1">({row.experience})</span>
+                            )}
+                          </td>
+                          <td className="py-1.5 px-3 font-bold text-emerald-700">
+                            ₹{(row.baseSalary || row.salary || 0).toLocaleString()}
+                          </td>
                         </>
                       )}
                       <td className="py-1.5 px-3 text-center">
@@ -956,6 +1106,8 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                         <div>
                           <span className="font-bold text-slate-800">Row {rej.row}: {rej.name}</span>
                           {rej.fatherName && <span className="text-slate-400"> (Father: {rej.fatherName})</span>}
+                          {!rej.fatherName && rej.email && <span className="text-slate-400"> ({rej.email})</span>}
+                          {!rej.fatherName && !rej.email && rej.phone && <span className="text-slate-400"> ({rej.phone})</span>}
                         </div>
                         <span className="text-rose-600 font-semibold text-[10px] pl-2 text-right">{rej.reason}</span>
                       </div>
@@ -969,7 +1121,7 @@ const ExcelDataImporter = ({ onImportSuccess }) => {
                 <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 text-xs animate-fade-in">
                   <p className="font-black text-amber-900 mb-2 flex items-center justify-between">
                     <span>⚠️ Skipped Rows ({importSummary.errors.length} Empty or Invalid Rows):</span>
-                    <span className="text-[10px] text-amber-700 font-normal">Rows without student names were skipped</span>
+                    <span className="text-[10px] text-amber-700 font-normal">Rows without valid names were skipped</span>
                   </p>
                   <div className="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1">
                     {importSummary.errors.map((err, eIdx) => (

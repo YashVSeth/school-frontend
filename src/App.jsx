@@ -31,6 +31,7 @@ import TeacherDashboard from './pages/Teacher/TeacherDashboard';
 import TeacherAttendance from './pages/Teacher/TeacherAttendance';
 import TeacherMarks from './pages/Teacher/TeacherMarks';
 import TeacherLeave from './pages/Teacher/TeacherLeave';
+import TeacherProfile from './pages/Teacher/TeacherProfile';
 
 // --- LAYOUT WRAPPERS ---
 import TeacherLayout from './components/TeacherLayout';
@@ -103,6 +104,9 @@ function App() {
 
                   {/* Leave Application */}
                   <Route path="leave" element={<TeacherLeave />} />
+
+                  {/* Teacher Profile */}
+                  <Route path="profile" element={<TeacherProfile />} />
 
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>

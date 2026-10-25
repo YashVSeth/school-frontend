@@ -5,9 +5,10 @@ import TeacherAttendanceModal from './TeacherAttendanceModal'; // Individual His
 import DailyAttendanceModal from './DailyAttendanceModal'; // ✅ IMPORT NEW COMPONENT
 import TeacherSalaryModal from './TeacherSalaryModal'; // ✅ IMPORT SALARY MODAL
 import AssignSalaryModal from './AssignSalaryModal'; // ✅ IMPORT ASSIGN SALARY MODAL
+import ExcelDataImporter from '../../components/ExcelDataImporter'; // ✅ IMPORT EXCEL IMPORTER
 import axios from 'axios';
 import {
-  FaPlus, FaSearch, FaEnvelope, FaPhone, FaBook, FaTrash, FaEdit, FaCalendarCheck, FaClipboardList, FaMoneyCheckAlt, FaWhatsapp, FaCopy, FaCheckCircle
+  FaPlus, FaSearch, FaEnvelope, FaPhone, FaBook, FaTrash, FaEdit, FaCalendarCheck, FaClipboardList, FaMoneyCheckAlt, FaWhatsapp, FaCopy, FaCheckCircle, FaFileExcel
 } from 'react-icons/fa';
 
 const Teachers = () => {
@@ -29,6 +30,9 @@ const Teachers = () => {
 
   // ✅ NEW: Bulk Assign Salary State
   const [isAssignSalaryOpen, setIsAssignSalaryOpen] = useState(false);
+
+  // ✅ NEW: Excel Importer State
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // ✅ NEW: Success Credentials Pop-Up
   const [successCredentials, setSuccessCredentials] = useState(null);
@@ -122,7 +126,19 @@ const Teachers = () => {
             <p className="text-slate-500">View and manage all faculty members.</p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            {/* ✅ IMPORT TEACHERS BUTTON */}
+            <button
+              onClick={() => setIsImportOpen(!isImportOpen)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all font-bold shadow-sm border ${
+                isImportOpen
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/20'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+              }`}
+            >
+              <FaFileExcel className={isImportOpen ? 'text-white' : 'text-emerald-600'} /> {isImportOpen ? 'Close Import' : 'Import Teachers'}
+            </button>
+
             {/* ✅ NEW: ASSIGN SALARY BUTTON */}
             <button
               onClick={() => setIsAssignSalaryOpen(true)}
@@ -148,6 +164,18 @@ const Teachers = () => {
             </button>
           </div>
         </div>
+
+        {/* EXCEL TEACHER IMPORTER */}
+        {isImportOpen && (
+          <div className="animate-fade-in">
+            <ExcelDataImporter
+              defaultType="teachers"
+              onImportSuccess={() => {
+                fetchTeachers();
+              }}
+            />
+          </div>
+        )}
 
         {/* SEARCH BAR */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">

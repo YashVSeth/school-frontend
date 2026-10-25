@@ -139,11 +139,11 @@ const Attendance = () => {
                 <tbody>
                   {students.map((student) => (
                     <tr key={student._id}>
-                      <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        #{student.rollNum}
+                      <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold text-slate-700">
+                        #{student.rollNo ?? student.rollNum ?? "—"}
                       </td>
-                      <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold">
-                        {student.name}
+                      <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold text-slate-800">
+                        {student.firstName ? `${student.firstName} ${student.lastName || ''}`.trim() : (student.name || "Student")}
                       </td>
                       <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                         <div className="flex gap-4">
