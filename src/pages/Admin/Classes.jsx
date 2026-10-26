@@ -233,8 +233,11 @@ const Classes = () => {
                 {/* Display Subjects */}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {cls.subjects?.slice(0, 3).map((s, i) => (
-                    <span key={i} className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded-full">
-                      {s.subject?.name || s.subjectName || "Subject"}
+                    <span key={i} className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded-full flex items-center gap-1 font-semibold">
+                      <span>{s.subject?.name || s.subjectName || "Subject"}</span>
+                      {s.teacher?.fullName && (
+                        <span className="text-red-900/80 font-normal">({s.teacher.fullName})</span>
+                      )}
                     </span>
                   ))}
                   {cls.subjects?.length > 3 && <span className="text-[10px] text-slate-400">+{cls.subjects.length - 3} more</span>}

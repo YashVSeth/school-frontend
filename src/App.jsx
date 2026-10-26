@@ -24,6 +24,7 @@ import LeaveManagement from './pages/Admin/LeaveManagement';
 import ExpenseCalculator from './pages/Admin/ExpenseCalculator';
 import IDCardManagement from './pages/Admin/IDCardManagement';
 import ResultManagement from './pages/Admin/ResultManagement';
+import DigiLocker from './pages/Admin/DigiLocker';
 import Settings from './pages/Admin/Settings';
 
 // Teacher Pages
@@ -32,6 +33,7 @@ import TeacherAttendance from './pages/Teacher/TeacherAttendance';
 import TeacherMarks from './pages/Teacher/TeacherMarks';
 import TeacherLeave from './pages/Teacher/TeacherLeave';
 import TeacherProfile from './pages/Teacher/TeacherProfile';
+import TeacherDigiLocker from './pages/Teacher/TeacherDigiLocker';
 
 // --- LAYOUT WRAPPERS ---
 import TeacherLayout from './components/TeacherLayout';
@@ -82,6 +84,7 @@ function App() {
                 <Route path="leaves" element={<LeaveManagement />} />
                 <Route path="id-cards" element={<IDCardManagement />} />
                 <Route path="results" element={<ResultManagement />} />
+                <Route path="digilocker" element={<DigiLocker />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
@@ -107,6 +110,9 @@ function App() {
 
                   {/* Teacher Profile */}
                   <Route path="profile" element={<TeacherProfile />} />
+
+                  {/* Teacher DigiLocker Vault */}
+                  <Route path="digilocker" element={<TeacherDigiLocker />} />
 
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>

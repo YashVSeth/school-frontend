@@ -52,6 +52,7 @@ const TeacherSidebar = ({ isOpen, toggleSidebar }) => {
     { to: '/teacher/marks', label: 'Marks & Grading', icon: FaAward },
     { to: '/teacher/leave', label: 'Apply Leave', icon: FaCalendarDay },
     { to: '/teacher/profile', label: 'Faculty Profile', icon: FaUserCircle },
+    { to: '/teacher/digilocker', label: 'DigiLocker Vault', icon: FaShieldAlt },
   ];
 
   return (
@@ -100,16 +101,6 @@ const TeacherSidebar = ({ isOpen, toggleSidebar }) => {
           </button>
         </div>
 
-        {/* Institution Badge */}
-        <div className="px-5 pt-4 pb-2">
-          <div className="px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Portal Mode</span>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Teacher Desk
-            </span>
-          </div>
-        </div>
 
         {/* Navigation Menu */}
         <nav className="flex-1 px-4 py-3 overflow-y-auto space-y-1.5 custom-scrollbar">

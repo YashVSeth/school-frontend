@@ -37,10 +37,12 @@ const PromoteClassModal = ({ isOpen, onClose, classes, refreshData, defaultClass
     if (fromClass === toClass) return toast.error("Source and Target class cannot be same!");
 
     // Find Class Names for confirmation
-    const fromName = classes.find(c => c._id === fromClass)?.grade;
-    const toName = classes.find(c => c._id === toClass)?.grade;
+    const fromCls = classes.find(c => c._id === fromClass);
+    const toCls = classes.find(c => c._id === toClass);
+    const fromName = fromCls ? (fromCls.grade?.toLowerCase().startsWith('class') ? fromCls.grade : `Class ${fromCls.grade}`) : 'Source Class';
+    const toName = toCls ? (toCls.grade?.toLowerCase().startsWith('class') ? toCls.grade : `Class ${toCls.grade}`) : 'Target Class';
 
-    if(!window.confirm(`CONFIRM PROMOTION?\n\nMove ALL students from Class ${fromName} to Class ${toName}?`)) return;
+    if(!window.confirm(`CONFIRM PROMOTION?\n\nMove ALL students from ${fromName} to ${toName}?`)) return;
 
     setLoading(true);
     try {
@@ -92,7 +94,7 @@ const PromoteClassModal = ({ isOpen, onClose, classes, refreshData, defaultClass
                         disabled={!!defaultClassId} // 🔒 Lock if selected from filter
                     >
                         <option value="">Select Class...</option>
-                        {classes.map(c => <option key={c._id} value={c._id}>Class {c.grade} ({c.section})</option>)}
+                        {classes.map(c => <option key={c._id} value={c._id}>{c.grade?.toLowerCase().startsWith('class') ? c.grade : `Class ${c.grade}`}{c.section ? ` (${c.section})` : ''}</option>)}
                     </select>
                 </div>
             </div>
@@ -111,7 +113,7 @@ const PromoteClassModal = ({ isOpen, onClose, classes, refreshData, defaultClass
                         <option value="">Select Next Class...</option>
                         {classes
                             .filter(c => c._id !== fromClass) // Hide same class
-                            .map(c => <option key={c._id} value={c._id}>Class {c.grade} ({c.section})</option>)
+                            .map(c => <option key={c._id} value={c._id}>{c.grade?.toLowerCase().startsWith('class') ? c.grade : `Class ${c.grade}`}{c.section ? ` (${c.section})` : ''}</option>)
                         }
                     </select>
                 </div>

@@ -21,6 +21,13 @@ const TeacherAttendance = () => {
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
+  const teacherName = useMemo(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return u.fullName || u.name || '';
+    } catch { return ''; }
+  }, []);
+
   // 1. Fetch Assigned Class(es) & Initial Students
   useEffect(() => {
     fetchClassAndStudents(selectedClassId);
@@ -210,7 +217,7 @@ const TeacherAttendance = () => {
             </div>
             <div>
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-yellow-300">
-                Assigned Class Monitor
+                Assigned Class Monitor {teacherName ? `· ${teacherName}` : ''}
               </span>
               <h1 className="text-xl font-black leading-tight text-white truncate">
                 {classInfo?.className || 'Assigned Class'}
@@ -237,7 +244,7 @@ const TeacherAttendance = () => {
                     : 'bg-white/10 text-white hover:bg-white/20'
                 }`}
               >
-                Class {cls.grade} {cls.section ? `(${cls.section})` : ''}
+                {cls.grade?.toLowerCase().startsWith('class') ? cls.grade : `Class ${cls.grade}`} {cls.section ? `(${cls.section})` : ''}
               </button>
             ))}
           </div>

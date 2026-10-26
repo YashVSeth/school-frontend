@@ -91,7 +91,7 @@ const TeacherProfile = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
-        <div className="w-10 h-10 border-4 border-[#ab0035] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-[#8f0631] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-sm font-semibold text-slate-500">Loading Faculty Profile...</p>
       </div>
     );
@@ -103,7 +103,7 @@ const TeacherProfile = () => {
   return (
     <div className="font-sans flex flex-col gap-5 pb-16 max-w-5xl mx-auto w-full">
       {/* 🔴 HERO CARD: Profile Overview */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#8b0025] via-[#ab0035] to-[#c71f4d] text-white shadow-xl p-6 border border-white/10">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#750426] via-[#8f0631] to-[#a81140] text-white shadow-xl p-6 border border-white/10">
         {/* Background decorative circles */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-yellow-400/10 rounded-full blur-xl pointer-events-none" />
@@ -212,7 +212,7 @@ const TeacherProfile = () => {
         <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/80 flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
-            <span className="w-8 h-8 rounded-xl bg-red-50 text-[#ab0035] flex items-center justify-center">
+            <span className="w-8 h-8 rounded-xl bg-red-50 text-[#8f0631] flex items-center justify-center">
               <FaChalkboardTeacher size={16} />
             </span>
             <span>Teaching Assignments</span>
@@ -226,7 +226,7 @@ const TeacherProfile = () => {
             <span className="text-[11px] font-bold uppercase tracking-wider text-red-600">Class Monitor / Class Teacher</span>
             <span className="text-base font-black text-slate-800">
               {scheduleData?.classTeacher
-                ? `Class ${scheduleData.classTeacher.grade}${scheduleData.classTeacher.section ? ` - ${scheduleData.classTeacher.section}` : ''}`
+                ? `${scheduleData.classTeacher.grade?.toLowerCase().startsWith('class') ? scheduleData.classTeacher.grade : `Class ${scheduleData.classTeacher.grade}`}${scheduleData.classTeacher.section ? ` - ${scheduleData.classTeacher.section}` : ''}`
                 : 'Not Assigned as Class Teacher'}
             </span>
           </div>
@@ -243,7 +243,9 @@ const TeacherProfile = () => {
               {scheduleData.schedule.map((item, idx) => (
                 <div key={item._id || idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/60 flex items-start justify-between">
                   <div>
-                    <span className="text-xs font-black text-slate-800">Class {item.grade} {item.section ? `(${item.section})` : ''}</span>
+                    <span className="text-xs font-black text-slate-800">
+                      {item.grade?.toLowerCase().startsWith('class') ? item.grade : `Class ${item.grade}`} {item.section ? `(${item.section})` : ''}
+                    </span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {item.subjects?.map((sub, sIdx) => (
                         <span key={sIdx} className="text-[11px] font-semibold bg-white text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
@@ -252,7 +254,7 @@ const TeacherProfile = () => {
                       ))}
                     </div>
                   </div>
-                  <FaBook className="text-[#ab0035] shrink-0 mt-1" size={14} />
+                  <FaBook className="text-[#8f0631] shrink-0 mt-1" size={14} />
                 </div>
               ))}
             </div>
@@ -353,30 +355,6 @@ const TeacherProfile = () => {
           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
             <span className="text-slate-400 block font-medium mb-0.5">Remarks / Notes</span>
             <span className="font-bold text-slate-800">{profile?.remarks || 'None'}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 💼 SECTION 4: Payroll & Account Info */}
-      <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-slate-800 font-bold text-sm border-b border-slate-100 pb-3">
-          <span className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-            <FaRupeeSign size={15} />
-          </span>
-          <span>Payroll & Account</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="p-3.5 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-100/70">
-            <span className="text-purple-600 block font-bold text-[11px] mb-0.5">Base Monthly Salary</span>
-            <span className="font-black text-slate-900 text-base">{formatCurrency(profile?.baseSalary)}</span>
-          </div>
-
-          <div className="p-3.5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100/70">
-            <span className="text-emerald-600 block font-bold text-[11px] mb-0.5">Account Status</span>
-            <span className="font-black text-emerald-700 text-base flex items-center gap-1.5">
-              <FaCheckCircle size={14} /> {profile?.status || 'Active'}
-            </span>
           </div>
         </div>
       </div>

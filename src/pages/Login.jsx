@@ -70,6 +70,7 @@ const Login = () => {
          token = data.token;
          userData = { 
             name: data.name, 
+            fullName: data.name,
             email: data.email, 
             _id: data.teacherId, 
             role: 'teacher' 

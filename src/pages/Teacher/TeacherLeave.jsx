@@ -128,7 +128,7 @@ const TeacherLeave = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
-        <div className="w-10 h-10 border-4 border-[#ab0035] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-[#8f0631] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Loading Leave Records...</p>
       </div>
     );
@@ -138,7 +138,7 @@ const TeacherLeave = () => {
     <div className="font-sans flex flex-col gap-6 max-w-5xl mx-auto w-full pb-16">
 
       {/* 🔴 OVERLAPPING HEADER CARD */}
-      <div className="bg-gradient-to-br from-[#7a0020] via-[#ab0035] to-[#8b0025] rounded-3xl shadow-xl p-6 sm:p-7 border border-white/10 relative overflow-hidden text-white">
+      <div className="bg-gradient-to-br from-[#6d0525] via-[#8f0631] to-[#750426] rounded-3xl shadow-xl p-6 sm:p-7 border border-white/10 relative overflow-hidden text-white">
         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
           <FaCalendarDay size={120} />
         </div>
@@ -188,11 +188,11 @@ const TeacherLeave = () => {
         <div className="lg:col-span-5 bg-white rounded-3xl shadow-xs border border-slate-200/80 p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
             <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <div className="w-1.5 h-4 bg-[#ab0035] rounded-full" />
+              <div className="w-1.5 h-4 bg-[#8f0631] rounded-full" />
               Submit Leave Request
             </h2>
             {leaveDays && (
-              <span className="text-xs font-black bg-red-50 text-[#ab0035] px-2.5 py-0.5 rounded-full border border-red-100">
+              <span className="text-xs font-black bg-red-50 text-[#8f0631] px-2.5 py-0.5 rounded-full border border-red-100">
                 {leaveDays} {leaveDays === 1 ? 'Day' : 'Days'}
               </span>
             )}
@@ -208,7 +208,7 @@ const TeacherLeave = () => {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-xl px-3.5 py-2.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#ab0035] transition"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-xl px-3.5 py-2.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#8f0631] transition"
               />
             </div>
 
@@ -221,7 +221,7 @@ const TeacherLeave = () => {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 min={startDate || new Date().toISOString().split('T')[0]}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-xl px-3.5 py-2.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#ab0035] transition"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-bold rounded-xl px-3.5 py-2.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-[#8f0631] transition"
               />
             </div>
 
@@ -234,7 +234,7 @@ const TeacherLeave = () => {
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Mention the reason for leave (medical, personal, family event, etc.)..."
                 rows="4"
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-xs rounded-xl p-3 outline-none focus:bg-white focus:ring-2 focus:ring-[#ab0035] transition resize-none leading-relaxed"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-xs rounded-xl p-3 outline-none focus:bg-white focus:ring-2 focus:ring-[#8f0631] transition resize-none leading-relaxed"
               ></textarea>
             </div>
 
@@ -244,7 +244,7 @@ const TeacherLeave = () => {
               className={`w-full py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider text-white shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 ${
                 isSubmitting
                   ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-[#ab0035] to-[#8b0025] hover:opacity-95 shadow-[#ab0035]/25'
+                  : 'bg-gradient-to-r from-[#8f0631] to-[#750426] hover:opacity-95 shadow-[#8f0631]/25'
               }`}
             >
               {isSubmitting ? (
@@ -311,7 +311,7 @@ const TeacherLeave = () => {
                   >
                     <div className="flex flex-col min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <FaCalendarAlt size={11} className="text-[#ab0035]" />
+                        <FaCalendarAlt size={11} className="text-[#8f0631]" />
                         <span className="text-slate-900 text-xs font-black whitespace-nowrap">
                           {dateStr}
                         </span>

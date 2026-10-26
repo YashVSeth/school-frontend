@@ -5,7 +5,7 @@ import {
   FaUserCheck, FaBookOpen, FaCalendarDay, FaAward,
   FaMapMarkerAlt, FaClipboardCheck, FaUserCircle,
   FaChalkboardTeacher, FaClock, FaArrowRight, FaCheckCircle,
-  FaCalendarAlt, FaUsers
+  FaCalendarAlt, FaUsers, FaShieldAlt
 } from 'react-icons/fa';
 
 const TeacherDashboard = () => {
@@ -97,7 +97,13 @@ const TeacherDashboard = () => {
   }
 
   const avatarUrl = profile?.photo || profile?.photoUrl;
-  const initial = profile?.fullName?.charAt(0) || 'T';
+  const teacherName = profile?.fullName || profile?.name || myClass?.classTeacher?.fullName || (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return u.fullName || u.name || '';
+    } catch { return ''; }
+  })() || 'Faculty Member';
+  const initial = teacherName.charAt(0) || 'T';
 
   return (
     <div className="font-sans flex flex-col gap-6">
@@ -139,7 +145,7 @@ const TeacherDashboard = () => {
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mt-0.5 drop-shadow-sm">
-                {profile?.fullName || 'Faculty Member'}
+                {teacherName}
               </h1>
               <p className="text-xs text-white/80 font-medium mt-1 flex items-center gap-2">
                 <span>Dept. of {profile?.specialization || 'Academics'}</span>
@@ -182,7 +188,7 @@ const TeacherDashboard = () => {
           <span className="text-xs font-semibold text-slate-400">Direct Shortcuts</span>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {/* Card 1: Attendance */}
           <Link
             to="/teacher/attendance"
@@ -240,7 +246,26 @@ const TeacherDashboard = () => {
             </div>
           </Link>
 
-          {/* Card 4: Profile */}
+          {/* Card 4: DigiLocker Vault */}
+          <Link
+            to="/teacher/digilocker"
+            className="group relative bg-white hover:bg-gradient-to-br hover:from-white hover:to-blue-900/10 p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+          >
+            <div className="w-11 h-11 rounded-xl bg-blue-900/10 text-blue-900 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-blue-900 group-hover:text-yellow-300 transition-all shadow-xs">
+              <FaShieldAlt size={20} />
+            </div>
+            <h3 className="font-extrabold text-sm text-slate-900 group-hover:text-blue-900 transition leading-tight">
+              DigiLocker Vault
+            </h3>
+            <p className="text-[11px] text-slate-500 font-medium mt-1 leading-snug">
+              Aadhaar, B.Ed degree & e-credentials
+            </p>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-black text-blue-900 opacity-0 group-hover:opacity-100 transition">
+              <span>Open Vault</span> <FaArrowRight size={10} />
+            </div>
+          </Link>
+
+          {/* Card 5: Profile */}
           <Link
             to="/teacher/profile"
             className="group relative bg-white hover:bg-gradient-to-br hover:from-white hover:to-emerald-50/50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
@@ -324,7 +349,7 @@ const TeacherDashboard = () => {
 
                       <div className="flex items-center gap-3 mt-1.5">
                         <span className="text-xs font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200/60">
-                          Class {cls.grade} {cls.section ? `(${cls.section})` : ''}
+                          {cls.grade?.toLowerCase().startsWith('class') ? cls.grade : `Class ${cls.grade}`} {cls.section ? `(${cls.section})` : ''}
                         </span>
                         <span className="text-slate-400 text-[11px] flex items-center gap-1 font-medium">
                           <FaMapMarkerAlt className="text-slate-400 text-[10px]" />
@@ -368,10 +393,15 @@ const TeacherDashboard = () => {
             {myClass ? (
               <div>
                 <h3 className="text-xl font-black text-white">
-                  Class {myClass.grade} {myClass.section ? `(${myClass.section})` : ''}
+                  {teacherName}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  You are officially designated as the Class Teacher for this section.
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="text-xs font-black text-yellow-300 bg-yellow-400/15 px-2.5 py-0.5 rounded-lg border border-yellow-400/20">
+                    Class Teacher · {myClass.grade?.toLowerCase().startsWith('class') ? myClass.grade : `Class ${myClass.grade}`} {myClass.section ? `(${myClass.section})` : ''}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">
+                  You are officially designated as the Class Teacher for {myClass.grade?.toLowerCase().startsWith('class') ? myClass.grade : `Class ${myClass.grade}`} {myClass.section ? `(${myClass.section})` : ''}.
                 </p>
 
                 <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
@@ -389,8 +419,15 @@ const TeacherDashboard = () => {
               </div>
             ) : (
               <div>
-                <h3 className="text-base font-bold text-slate-300">Subject Faculty</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <h3 className="text-xl font-black text-white">
+                  {teacherName}
+                </h3>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
+                    Subject Faculty
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">
                   You are currently active as a Subject Teacher across assigned classes.
                 </p>
                 <div className="mt-4 pt-3 border-t border-slate-800">
@@ -403,36 +440,6 @@ const TeacherDashboard = () => {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Guidelines & Institutional Notice */}
-          <div className="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/80">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
-              <h4 className="font-extrabold text-sm text-slate-800">Daily Faculty Guidelines</h4>
-            </div>
-
-            <ul className="space-y-2.5 text-xs text-slate-600">
-              <li className="flex items-start gap-2">
-                <FaCheckCircle className="text-emerald-500 text-xs shrink-0 mt-0.5" />
-                <span>Mark morning roll call before <strong>10:00 AM</strong> daily.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <FaCheckCircle className="text-emerald-500 text-xs shrink-0 mt-0.5" />
-                <span>Submit term examination marks within <strong>48 hours</strong> of exam date.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <FaCheckCircle className="text-emerald-500 text-xs shrink-0 mt-0.5" />
-                <span>Apply for planned leaves at least <strong>1 day in advance</strong>.</span>
-              </li>
-            </ul>
-
-            <div className="mt-4 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-              <p className="text-[11px] font-semibold text-amber-900 leading-snug">
-                Portal synchronizes automatically with the central administration database.
-              </p>
-            </div>
           </div>
         </div>
 

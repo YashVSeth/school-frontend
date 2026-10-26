@@ -18,7 +18,7 @@ import * as XLSX from 'xlsx';
 
 // Consistent avatar colors derived from the maroon theme
 const AVATAR_COLORS = [
-  { bg: '#fbf0f3', text: '#ab0035' },
+  { bg: '#fbf0f4', text: '#8f0631' },
   { bg: '#fff0e6', text: '#c75a00' },
   { bg: '#eef6ff', text: '#2563eb' },
   { bg: '#f0fdf4', text: '#16a34a' },
@@ -53,7 +53,7 @@ const GRADE_COLORS = {
   '7': { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' },
   '8': { bg: '#f0f9ff', text: '#0284c7', border: '#bae6fd' },
   '9': { bg: '#ecfdf5', text: '#047857', border: '#6ee7b7' },
-  '10': { bg: '#fbf0f3', text: '#ab0035', border: '#f5dbe3' },
+  '10': { bg: '#fbf0f4', text: '#8f0631', border: '#f6dce4' },
   '11': { bg: '#f5f3ff', text: '#6d28d9', border: '#c4b5fd' },
   '12': { bg: '#fff7ed', text: '#c2410c', border: '#fdba74' },
 };
@@ -61,7 +61,7 @@ const GRADE_COLORS = {
 const getGradeColor = (grade) => {
   if (!grade) return { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' };
   const numericGrade = grade.replace(/[^0-9]/g, '');
-  return GRADE_COLORS[numericGrade] || { bg: '#fbf0f3', text: '#ab0035', border: '#f5dbe3' };
+  return GRADE_COLORS[numericGrade] || { bg: '#fbf0f4', text: '#8f0631', border: '#f6dce4' };
 };
 
 const formatDOB = (dob) => {
@@ -226,7 +226,7 @@ const StudentList = () => {
 
   const getSelectedClassName = () => {
     const cls = classes.find(c => c._id === selectedClass);
-    return cls ? `Class ${cls.grade}` : 'Batch';
+    return cls ? (cls.grade?.toLowerCase().startsWith('class') ? cls.grade : `Class ${cls.grade}`) : 'Batch';
   };
 
   const handleReassignRollNumbers = async () => {

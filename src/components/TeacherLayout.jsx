@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  FaHome, FaClipboardCheck, FaAward, FaUserCircle,
-  FaBars, FaCalendarDay, FaGraduationCap
-} from 'react-icons/fa';
+import { FaBars } from 'react-icons/fa';
 import TeacherSidebar from './TeacherSidebar';
 
 const TeacherLayout = ({ children }) => {
@@ -28,44 +25,9 @@ const TeacherLayout = ({ children }) => {
     }
   }, []);
 
-  const isActive = (path) => {
-    if (path === '/teacher/dashboard') {
-      return location.pathname === '/teacher/dashboard' || location.pathname === '/teacher';
-    }
-    return location.pathname.startsWith(path);
-  };
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-
-  const navItems = [
-    {
-      to: '/teacher/dashboard',
-      label: 'Home',
-      icon: FaHome
-    },
-    {
-      to: '/teacher/attendance',
-      label: 'Attendance',
-      icon: FaClipboardCheck
-    },
-    {
-      to: '/teacher/marks',
-      label: 'Marks',
-      icon: FaAward
-    },
-    {
-      to: '/teacher/leave',
-      label: 'Leave',
-      icon: FaCalendarDay
-    },
-    {
-      to: '/teacher/profile',
-      label: 'Profile',
-      icon: FaUserCircle
-    }
-  ];
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans select-none text-slate-800">
@@ -150,7 +112,7 @@ const TeacherLayout = ({ children }) => {
         </div>
 
         {/* 📄 SCROLLABLE PAGE VIEWPORT */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto w-full custom-scrollbar relative px-3 py-4 lg:p-8 pb-24 lg:pb-10">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto w-full custom-scrollbar relative px-3 py-4 lg:p-8 pb-10">
           {/* Subtle Maroon Top Accent Gradient on Large screens */}
           <div className="hidden lg:block absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#8f0631]/10 via-[#750426]/5 to-transparent -z-10 pointer-events-none" />
 
@@ -159,45 +121,6 @@ const TeacherLayout = ({ children }) => {
           </div>
         </main>
       </div>
-
-      {/* 📱 FIXED BOTTOM NAVIGATION BAR (MOBILE PHONES ONLY) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-[66px] bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-50 flex justify-around items-center px-1 shadow-[0_-8px_25px_rgba(0,0,0,0.06)] shrink-0">
-        {navItems.map((item) => {
-          const active = isActive(item.to);
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 transition-all duration-200 ${
-                active ? 'text-[#8f0631]' : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              {/* Active Indicator Top Pill */}
-              {active && (
-                <span className="absolute top-1 w-7 h-1 bg-[#8f0631] rounded-full shadow-xs"></span>
-              )}
-
-              <div
-                className={`p-1.5 rounded-xl transition-all ${
-                  active ? 'bg-red-50 text-[#8f0631] scale-110 shadow-xs' : ''
-                }`}
-              >
-                <Icon size={19} />
-              </div>
-
-              <span
-                className={`text-[10px] tracking-tight transition-all mt-0.5 ${
-                  active ? 'font-black text-[#8f0631]' : 'font-semibold text-slate-500'
-                }`}
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 };

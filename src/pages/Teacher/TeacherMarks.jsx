@@ -7,18 +7,17 @@ import {
 } from 'react-icons/fa';
 
 const EXAM_TYPES = [
-  { label: 'Unit Test', max: 20 },
+  { label: 'Unit 1', max: 20 },
+  { label: 'Unit 2', max: 20 },
   { label: 'Mid Term', max: 100 },
-  { label: 'Final Exam', max: 100 },
-  { label: 'Assignment', max: 10 },
-  { label: 'Practical', max: 30 }
+  { label: 'End Term', max: 100 }
 ];
 
 const TeacherMarks = () => {
   const [schedule, setSchedule] = useState([]); // [{ _id, grade, section, subjects: ['Math', ...] }]
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [examType, setExamType] = useState('Unit Test');
+  const [examType, setExamType] = useState('Unit 1');
   const [students, setStudents] = useState([]);
   const [marks, setMarks] = useState({}); // { studentId: score }
   const [loadingSchedule, setLoadingSchedule] = useState(true);
@@ -27,6 +26,13 @@ const TeacherMarks = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const BASE_URL = import.meta.env.VITE_API_URL;
+
+  const teacherName = useMemo(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return u.fullName || u.name || '';
+    } catch { return ''; }
+  }, []);
 
   // 1. Fetch Teacher's Assigned Classes and Subjects
   useEffect(() => {
@@ -52,7 +58,14 @@ const TeacherMarks = () => {
         }
       } else if (res.data.classTeacher) {
         // Fallback: If teacher only has a class assigned as classTeacher
-        setSelectedClassId(res.data.classTeacher._id);
+        const fallbackClass = res.data.classTeacher;
+        setSelectedClassId(fallbackClass._id);
+        const fallbackSubjects = (fallbackClass.subjects || [])
+          .map(s => s.subject?.name || s.subject)
+          .filter(Boolean);
+        if (fallbackSubjects.length > 0) {
+          setSelectedSubject(fallbackSubjects[0]);
+        }
       }
     } catch (error) {
       console.error("Error fetching schedule:", error);
@@ -255,7 +268,7 @@ const TeacherMarks = () => {
   if (loadingSchedule) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-slate-400">
-        <div className="w-8 h-8 border-3 border-[#ab0035] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-[#8f0631] border-t-transparent rounded-full animate-spin" />
         <p className="text-xs font-semibold text-slate-500">Loading Assigned Subjects...</p>
       </div>
     );
@@ -265,7 +278,7 @@ const TeacherMarks = () => {
     <div className="font-sans flex flex-col gap-4 max-w-5xl mx-auto w-full pb-20">
       
       {/* 🔴 HERO CARD: Gradebook Banner */}
-      <div className="bg-gradient-to-br from-[#8b0025] via-[#ab0035] to-[#c71f4d] rounded-3xl p-5 text-white shadow-xl border border-white/10 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#750426] via-[#8f0631] to-[#a81140] rounded-3xl p-5 text-white shadow-xl border border-white/10 relative overflow-hidden">
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-yellow-300 border border-white/20 shrink-0">
@@ -273,17 +286,13 @@ const TeacherMarks = () => {
             </div>
             <div>
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-yellow-300">
-                Subject Gradebook
+                Subject Gradebook {teacherName ? `· ${teacherName}` : ''}
               </span>
               <h1 className="text-xl font-black leading-tight text-white truncate">
                 {selectedSubject || 'Marks Entry'}
               </h1>
             </div>
           </div>
-
-          <span className="bg-white/15 px-3 py-1 rounded-full text-xs font-bold text-white border border-white/20 shrink-0">
-            Max: {currentExam.max} pts
-          </span>
         </div>
 
         {/* 📚 ASSIGNED CLASS SELECTION CHIPS */}
@@ -300,6 +309,8 @@ const TeacherMarks = () => {
                     setSelectedClassId(cls._id);
                     if (cls.subjects && cls.subjects.length > 0) {
                       setSelectedSubject(cls.subjects[0]);
+                    } else {
+                      setSelectedSubject('');
                     }
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
@@ -308,19 +319,19 @@ const TeacherMarks = () => {
                       : 'bg-white/15 text-white hover:bg-white/25'
                   }`}
                 >
-                  Class {cls.grade} {cls.section ? `(${cls.section})` : ''}
+                  {cls.grade?.toLowerCase().startsWith('class') ? cls.grade : `Class ${cls.grade}`} {cls.section ? `(${cls.section})` : ''}
                 </button>
               ))}
             </div>
           ) : (
             <div className="text-xs text-yellow-200 italic">
-              No classes currently assigned to you for subjects.
+              No classes currently assigned to you.
             </div>
           )}
         </div>
 
         {/* 📖 ASSIGNED SUBJECT SELECTION (For Selected Class) */}
-        {availableSubjects.length > 0 && (
+        {availableSubjects.length > 0 ? (
           <div className="mt-2.5">
             <span className="text-[11px] font-bold text-white/80 block mb-1.5">
               Assigned Subject:
@@ -332,7 +343,7 @@ const TeacherMarks = () => {
                   onClick={() => setSelectedSubject(sub)}
                   className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1.5 ${
                     selectedSubject === sub
-                      ? 'bg-white text-[#ab0035] shadow-sm font-black'
+                      ? 'bg-white text-[#8f0631] shadow-sm font-black'
                       : 'bg-white/10 text-white/90 hover:bg-white/20'
                   }`}
                 >
@@ -342,6 +353,12 @@ const TeacherMarks = () => {
               ))}
             </div>
           </div>
+        ) : (
+          selectedClassId && (
+            <div className="mt-2 text-xs text-yellow-200/90 italic bg-white/10 px-3 py-1.5 rounded-xl border border-white/15 inline-block">
+              ℹ️ No specific subjects assigned yet for this class.
+            </div>
+          )
         )}
       </div>
 
@@ -412,7 +429,7 @@ const TeacherMarks = () => {
       {/* 📋 STUDENTS MARKS LIST */}
       {loadingStudents ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-          <div className="w-8 h-8 border-3 border-[#ab0035] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-3 border-[#8f0631] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs font-semibold text-slate-500">Loading Students for Class...</span>
         </div>
       ) : filteredStudents.length === 0 ? (
@@ -479,8 +496,8 @@ const TeacherMarks = () => {
                       onChange={(e) => handleScoreChange(student._id, e.target.value)}
                       className={`w-16 sm:w-20 py-2 px-2 text-center font-black text-sm rounded-xl border outline-none transition ${
                         isFilled
-                          ? 'border-[#ab0035] bg-white text-[#ab0035] shadow-xs'
-                          : 'border-slate-200 bg-slate-50 text-slate-800 focus:bg-white focus:border-[#ab0035]'
+                          ? 'border-[#8f0631] bg-white text-[#8f0631] shadow-xs'
+                          : 'border-slate-200 bg-slate-50 text-slate-800 focus:bg-white focus:border-[#8f0631]'
                       }`}
                     />
                     <span className="text-[10px] text-slate-400 font-bold ml-1.5">
@@ -511,7 +528,7 @@ const TeacherMarks = () => {
               className={`flex-1 py-3.5 px-4 rounded-xl font-black text-sm text-white shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 ${
                 saving
                   ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-[#ab0035] to-[#8b0025] hover:opacity-95 shadow-[#ab0035]/25'
+                  : 'bg-gradient-to-r from-[#8f0631] to-[#750426] hover:opacity-95 shadow-[#8f0631]/25'
               }`}
             >
               {saving ? (

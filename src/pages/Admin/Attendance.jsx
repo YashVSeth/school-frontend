@@ -11,6 +11,8 @@ const Attendance = () => {
   const [students, setStudents] = useState([]);
   const [attendanceData, setAttendanceData] = useState({}); // { studentId: "Present" }
 
+  const BASE_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -18,12 +20,12 @@ const Attendance = () => {
   const fetchClasses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(import.meta.env.VITE_API_URL, {
+      const response = await axios.get(`${BASE_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setClasses(response.data);
+      setClasses(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error("Error fetching classes");
+      console.error("Error fetching classes", error);
     }
   };
 
@@ -34,18 +36,36 @@ const Attendance = () => {
     }
     try {
       const token = localStorage.getItem('token');
-      // We need an endpoint to filter students by class. 
-      // For now, we fetch all and filter client-side (Optimizable later)
-      const response = await axios.get('import.meta.env.VITE_API_URL/api/students', {
+      // 1. Fetch class students
+      const stdRes = await axios.get(`${BASE_URL}/api/students/class/${selectedClass}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      const classStudents = response.data.filter(s => s.classId._id === selectedClass);
+      const classStudents = stdRes.data.students || stdRes.data || [];
       setStudents(classStudents);
       
-      // Initialize all as Present by default
-      const initialStatus = {};
-      classStudents.forEach(s => initialStatus[s._id] = "Present");
+      // 2. Fetch existing daily attendance for that date & class (e.g. taken by teacher)
+      let initialStatus = {};
+      try {
+        const dailyRes = await axios.get(`${BASE_URL}/api/attendance/daily?classId=${selectedClass}&date=${date}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const records = Array.isArray(dailyRes.data) ? dailyRes.data : [];
+        if (records.length > 0) {
+          records.forEach(r => {
+            const sId = r.student?._id || r.student;
+            if (sId) initialStatus[sId] = r.status;
+          });
+        }
+      } catch (err) {
+        console.warn("Could not load daily records", err);
+      }
+
+      // Default remaining as Present if not marked
+      classStudents.forEach(s => {
+        if (!initialStatus[s._id]) initialStatus[s._id] = "Present";
+      });
+
       setAttendanceData(initialStatus);
 
     } catch (error) {
@@ -61,25 +81,29 @@ const Attendance = () => {
   };
 
   const handleSubmit = async () => {
+    if (!selectedClass) {
+      return toast.error("Please select a class");
+    }
     try {
       const token = localStorage.getItem('token');
       
-      // Convert state object to array for backend
-      const studentsArray = Object.keys(attendanceData).map(id => ({
-        _id: id,
+      // Convert state object to records array for backend
+      const recordsArray = Object.keys(attendanceData).map(id => ({
+        student: id,
         status: attendanceData[id]
       }));
 
-      await axios.post(import.meta.env.VITE_API_URL, {
+      await axios.post(`${BASE_URL}/api/attendance`, {
         date,
-        students: studentsArray
+        classId: selectedClass,
+        records: recordsArray
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       toast.success("Attendance Marked Successfully!");
     } catch (error) {
-      toast.error("Failed to mark attendance");
+      toast.error(error.response?.data?.message || "Failed to mark attendance");
     }
   };
 

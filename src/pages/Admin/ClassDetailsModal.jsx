@@ -54,11 +54,12 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
           const subjectId = typeof item.subject === 'object' ? item.subject._id : item.subject;
           
           const fullSubject = allSubjects.find(s => s._id === subjectId) || { name: "Unknown Subject", _id: subjectId };
+          const teacherId = (item.teacher && typeof item.teacher === 'object') ? item.teacher._id : item.teacher;
           
           return {
             ...item,
             subject: fullSubject,
-            teacher: item.teacher
+            teacher: teacherId || null
           };
         }).filter(Boolean);
         setClassSubjects(formattedSubjects);
@@ -87,7 +88,7 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
   const handleAssignSubjectTeacher = (subjectId, teacherId) => {
     const updated = classSubjects.map(item => {
       if (item.subject && item.subject._id === subjectId) {
-        return { ...item, teacher: teacherId || null }; 
+        return { ...item, teacher: (teacherId && String(teacherId).trim() !== "") ? teacherId : null }; 
       }
       return item;
     });
@@ -106,13 +107,16 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
       
       const payload = {
         // 1. Send Class Teacher ID
-        classTeacher: assignedClassTeacher || null, 
+        classTeacher: assignedClassTeacher ? assignedClassTeacher : null, 
 
         // 2. Send Subjects Array (IDs only)
-        subjects: classSubjects.map(item => ({
-          subject: item.subject._id,
-          teacher: (item.teacher && typeof item.teacher === 'object') ? item.teacher._id : item.teacher
-        }))
+        subjects: classSubjects.map(item => {
+          const tId = (item.teacher && typeof item.teacher === 'object') ? item.teacher._id : item.teacher;
+          return {
+            subject: item.subject._id,
+            teacher: (tId && String(tId).trim() !== "") ? tId : null
+          };
+        })
       };
 
       await axios.put(`${BASE_URL}/api/classes/${classData._id}`, payload, { 
@@ -123,7 +127,7 @@ const ClassDetailsModal = ({ isOpen, onClose, classData, onUpdate }) => {
       onUpdate(); 
       onClose();
     } catch (error) { 
-        toast.error("Failed to update class details"); 
+        toast.error(error.response?.data?.message || "Failed to update class details"); 
     }
   };
 

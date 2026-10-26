@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaChalkboardTeacher, FaUserGraduate, FaClipboardList,
   FaSignOutAlt, FaChevronDown, FaChevronRight, FaUniversity, FaTimes,
-  FaWallet, FaIdCard, FaAward, FaCog
+  FaWallet, FaIdCard, FaAward, FaCog, FaShieldAlt
 } from 'react-icons/fa';
 import { FaMoneyBillWave } from 'react-icons/fa';
 import { FaLayerGroup } from 'react-icons/fa';
@@ -186,6 +186,24 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           >
             <FaAward />
             <span className="font-medium">Results</span>
+          </Link>
+
+          {/* 🇮🇳 DIGILOCKER VAULT LINK */}
+          <Link
+            to="/admin/digilocker"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/digilocker')
+              ? 'bg-[#003366] text-white shadow-lg border-l-4 border-yellow-400'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <FaShieldAlt className={isActive('/admin/digilocker') ? 'text-yellow-400' : 'text-blue-400'} />
+            <div className="flex items-center justify-between flex-1">
+              <span className="font-medium">DigiLocker</span>
+              <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">
+                Vault
+              </span>
+            </div>
           </Link>
 
           {/* ⚙️ SETTINGS */}
