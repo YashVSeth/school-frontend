@@ -8,6 +8,7 @@ import {
 import { FaMoneyBillWave } from 'react-icons/fa';
 import { FaLayerGroup } from 'react-icons/fa';
 import { FaFileInvoiceDollar } from 'react-icons/fa';
+import logo from '../assets/logo.png';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
@@ -50,11 +51,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         {/* 🔹 LOGO AREA */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-red-600 p-2 rounded-lg shadow-lg">
-              <FaUniversity className="text-xl text-white" />
+            <div className="w-10 h-10 rounded-full bg-white p-0.5 shadow-lg flex items-center justify-center overflow-hidden shrink-0">
+              <img src={logo} alt="Radhey Shyam Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-wide">Radhe Shyam</h1>
+              <h1 className="text-lg font-bold tracking-wide">Radhey Shyam</h1>
               <p className="text-xs text-slate-400 font-medium">Admin Portal</p>
             </div>
           </div>

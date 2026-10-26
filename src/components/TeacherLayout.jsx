@@ -52,7 +52,7 @@ const TeacherLayout = ({ children }) => {
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span className="font-black text-sm tracking-tight leading-tight">Faculty Portal</span>
               </div>
-              <span className="text-[10px] text-amber-300 font-extrabold uppercase tracking-widest leading-none mt-0.5">
+              <span className="text-[10px] text-rose-200/90 font-extrabold uppercase tracking-widest leading-none mt-0.5">
                 Radhey Shyam Sansthaan
               </span>
             </div>
@@ -63,7 +63,7 @@ const TeacherLayout = ({ children }) => {
             to="/teacher/profile"
             className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-2.5 py-1.5 rounded-full border border-white/20 transition active:scale-95 shadow-sm"
           >
-            <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center text-xs font-bold text-yellow-300">
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center text-xs font-bold text-white">
               {teacherPhoto ? (
                 <img src={teacherPhoto} alt="Me" className="w-full h-full object-cover" />
               ) : (
@@ -98,7 +98,7 @@ const TeacherLayout = ({ children }) => {
             </div>
             <Link
               to="/teacher/profile"
-              className="w-9 h-9 rounded-xl p-0.5 bg-gradient-to-br from-yellow-400 to-amber-600 shadow hover:scale-105 transition"
+              className="w-9 h-9 rounded-xl p-0.5 bg-slate-200 hover:bg-slate-300 shadow hover:scale-105 transition"
             >
               <div className="w-full h-full rounded-[10px] overflow-hidden bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
                 {teacherPhoto ? (

@@ -111,7 +111,7 @@ const TeacherProfile = () => {
         <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           {/* Avatar with Status Ring */}
           <div className="relative shrink-0">
-            <div className="w-24 h-24 rounded-2xl p-1 bg-gradient-to-b from-yellow-300 to-yellow-500 shadow-lg">
+            <div className="w-24 h-24 rounded-2xl p-1 bg-white/20 backdrop-blur-md border border-white/30 shadow-xl">
               <div className="w-full h-full rounded-[14px] overflow-hidden bg-slate-900 flex items-center justify-center">
                 {avatarUrl ? (
                   <img
@@ -133,7 +133,7 @@ const TeacherProfile = () => {
 
           {/* Details */}
           <div className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-1.5 bg-yellow-400/20 text-yellow-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-1 border border-yellow-300/30">
+            <div className="inline-flex items-center gap-1.5 bg-white/15 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-1 border border-white/20">
               <FaShieldAlt size={10} />
               {profile?.role || 'Faculty Member'}
             </div>
@@ -141,69 +141,24 @@ const TeacherProfile = () => {
               {profile?.fullName || 'Teacher Name'}
             </h1>
             <p className="text-sm text-white/80 font-medium mt-0.5">
-              Specialization: <span className="text-yellow-300 font-bold">{profile?.specialization || 'General'}</span>
+              Specialization: <span className="text-white font-bold">{profile?.specialization || 'General'}</span>
             </p>
 
             {/* Quick Badges */}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
               <span className="text-xs bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl text-white/90 border border-white/10 flex items-center gap-1.5">
-                <FaGraduationCap className="text-yellow-300" />
+                <FaGraduationCap className="text-rose-200" />
                 {profile?.highestQualification || 'B.Ed'}
               </span>
               <span className="text-xs bg-white/10 backdrop-blur-md px-3 py-1 rounded-xl text-white/90 border border-white/10 flex items-center gap-1.5">
-                <FaBriefcase className="text-yellow-300" />
+                <FaBriefcase className="text-rose-200" />
                 {profile?.experience || 'Experienced'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Quick Contact Action Pills */}
-        <div className="grid grid-cols-3 gap-2 mt-6 pt-5 border-t border-white/15">
-          {profile?.phone ? (
-            <a
-              href={`tel:${profile.phone}`}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition text-xs font-bold text-white shadow-sm"
-            >
-              <FaPhoneAlt size={12} className="text-yellow-300" />
-              Call
-            </a>
-          ) : (
-            <span className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/5 text-xs text-white/40 cursor-not-allowed">
-              <FaPhoneAlt size={12} /> Call
-            </span>
-          )}
 
-          {profile?.phone ? (
-            <a
-              href={`https://wa.me/${profile.phone.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-emerald-500/80 hover:bg-emerald-500 active:scale-95 transition text-xs font-bold text-white shadow-sm"
-            >
-              <FaWhatsapp size={14} />
-              WhatsApp
-            </a>
-          ) : (
-            <span className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/5 text-xs text-white/40 cursor-not-allowed">
-              <FaWhatsapp size={14} /> WhatsApp
-            </span>
-          )}
-
-          {profile?.email ? (
-            <a
-              href={`mailto:${profile.email}`}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition text-xs font-bold text-white shadow-sm"
-            >
-              <FaEnvelope size={12} className="text-yellow-300" />
-              Email
-            </a>
-          ) : (
-            <span className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/5 text-xs text-white/40 cursor-not-allowed">
-              <FaEnvelope size={12} /> Email
-            </span>
-          )}
-        </div>
       </div>
 
       {/* 🏛️ TWO-COLUMN DOSSIER GRID */}

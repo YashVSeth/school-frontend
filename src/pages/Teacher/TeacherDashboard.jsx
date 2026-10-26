@@ -111,15 +111,15 @@ const TeacherDashboard = () => {
       {/* 🔴 EXECUTIVE WELCOME BANNER */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#6d0525] via-[#8f0631] to-[#750426] text-white shadow-xl p-6 sm:p-7 border border-white/10">
         {/* Subtle background ambient lights */}
-        <div className="absolute -top-16 -right-16 w-56 h-56 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-56 h-56 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* Left: Avatar + Details */}
           <div className="flex items-center gap-4 sm:gap-5">
-            {/* Avatar with golden glowing frame */}
+            {/* Avatar with sleek frosted glass frame */}
             <div className="relative shrink-0">
-              <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl p-1 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 shadow-lg">
+              <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl p-1 bg-white/20 backdrop-blur-md border border-white/30 shadow-xl">
                 <div className="w-full h-full rounded-[14px] overflow-hidden bg-slate-900 flex items-center justify-center">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -137,10 +137,10 @@ const TeacherDashboard = () => {
             {/* Teacher Details */}
             <div className="flex flex-col text-white">
               <div className="flex items-center gap-2">
-                <span className="text-amber-300 font-extrabold text-xs tracking-wider uppercase">
+                <span className="text-rose-200 font-extrabold text-xs tracking-wider uppercase">
                   {greeting},
                 </span>
-                <span className="hidden sm:inline-block text-[11px] bg-white/15 px-2 py-0.5 rounded-full font-bold text-amber-200">
+                <span className="hidden sm:inline-block text-[11px] bg-white/15 px-2 py-0.5 rounded-full font-bold text-white/90">
                   {todayFormatted}
                 </span>
               </div>
@@ -150,7 +150,7 @@ const TeacherDashboard = () => {
               <p className="text-xs text-white/80 font-medium mt-1 flex items-center gap-2">
                 <span>Dept. of {profile?.specialization || 'Academics'}</span>
                 <span>•</span>
-                <span className="text-amber-300 font-semibold">{profile?.phone || 'Faculty Desk'}</span>
+                <span className="text-rose-100 font-semibold">{profile?.phone || 'Faculty Desk'}</span>
               </p>
             </div>
           </div>
@@ -158,18 +158,18 @@ const TeacherDashboard = () => {
           {/* Right / Bottom: Executive Metric Badges */}
           <div className="grid grid-cols-3 gap-2 bg-black/20 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/10 md:min-w-[320px]">
             <div className="flex flex-col items-center justify-center text-center px-2 py-1">
-              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Attendance</span>
+              <span className="text-[10px] font-bold text-rose-200/90 uppercase tracking-wider">Attendance</span>
               <span className="text-lg font-black text-white">{stats.presence}%</span>
               <span className="text-[9px] text-white/60 font-medium">Record</span>
             </div>
             <div className="flex flex-col items-center justify-center text-center px-2 py-1 border-x border-white/10">
-              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Lectures</span>
+              <span className="text-[10px] font-bold text-rose-200/90 uppercase tracking-wider">Lectures</span>
               <span className="text-lg font-black text-white">{schedule.length}</span>
               <span className="text-[9px] text-white/60 font-medium">Assigned</span>
             </div>
             <div className="flex flex-col items-center justify-center text-center px-2 py-1">
-              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Students</span>
-              <span className="text-lg font-black text-emerald-300">
+              <span className="text-[10px] font-bold text-rose-200/90 uppercase tracking-wider">Students</span>
+              <span className="text-lg font-black text-white">
                 {myClass ? stats.studentCount : schedule.length > 0 ? `${schedule.length * 30}+` : '—'}
               </span>
               <span className="text-[9px] text-white/60 font-medium">Strength</span>
@@ -188,7 +188,7 @@ const TeacherDashboard = () => {
           <span className="text-xs font-semibold text-slate-400">Direct Shortcuts</span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Card 1: Attendance */}
           <Link
             to="/teacher/attendance"
@@ -224,25 +224,6 @@ const TeacherDashboard = () => {
             </p>
             <div className="mt-3 flex items-center gap-1 text-[11px] font-black text-amber-600 opacity-0 group-hover:opacity-100 transition">
               <span>Gradebook</span> <FaArrowRight size={10} />
-            </div>
-          </Link>
-
-          {/* Card 3: Leave */}
-          <Link
-            to="/teacher/leave"
-            className="group relative bg-white hover:bg-gradient-to-br hover:from-white hover:to-blue-50/50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-          >
-            <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-xs">
-              <FaCalendarDay size={20} />
-            </div>
-            <h3 className="font-extrabold text-sm text-slate-900 group-hover:text-blue-600 transition leading-tight">
-              Apply Leave
-            </h3>
-            <p className="text-[11px] text-slate-500 font-medium mt-1 leading-snug">
-              Request leaves and check approval statuses
-            </p>
-            <div className="mt-3 flex items-center gap-1 text-[11px] font-black text-blue-600 opacity-0 group-hover:opacity-100 transition">
-              <span>Submit Request</span> <FaArrowRight size={10} />
             </div>
           </Link>
 
