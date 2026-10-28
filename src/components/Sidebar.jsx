@@ -14,6 +14,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showStudentMenu, setShowStudentMenu] = useState(false);
+  const [showClassMenu, setShowClassMenu] = useState(false);
+  const [showFinanceMenu, setShowFinanceMenu] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -21,8 +23,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   };
 
   const isActive = (path) => location.pathname === path;
-  const isStudentSection = location.pathname.includes('/students');
-  const isFeeSection = location.pathname.includes('/fees') || location.pathname.includes('/fee-structure') || location.pathname.includes('/finance');
+  const isClassSection = location.pathname.includes('/classes') || location.pathname === '/admin/students/list' || location.pathname.includes('/subjects');
+  const isStudentSection = location.pathname.includes('/students/add') || location.pathname.includes('/id-cards') || location.pathname.includes('/results');
+  const isFinanceSection = location.pathname.includes('/fees') || location.pathname.includes('/fee-structure') || location.pathname.includes('/finance') || location.pathname.includes('/expenses');
 
   // Helper to close sidebar on mobile when a link is clicked
   const handleLinkClick = () => {
@@ -80,16 +83,46 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <FaHome /> <span className="font-medium">Dashboard</span>
           </Link>
 
-          <Link
-            to="/admin/classes"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/classes')
-              ? 'bg-[#800000] text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaChalkboardTeacher /> <span className="font-medium">Classes</span>
-          </Link>
+          {/* Classes Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setShowClassMenu(!showClassMenu)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isClassSection ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <FaChalkboardTeacher className={isClassSection ? 'text-red-400' : ''} />
+                <span className="font-medium">Classes</span>
+              </div>
+              {showClassMenu || isClassSection ? <FaChevronDown className="text-xs" /> : <FaChevronRight className="text-xs" />}
+            </button>
+
+            {(showClassMenu || isClassSection) && (
+              <div className="ml-4 pl-4 border-l-2 border-slate-700 space-y-1 mt-1">
+                <Link
+                  to="/admin/classes"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/classes') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Manage Classes
+                </Link>
+                <Link
+                  to="/admin/students/list"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/students/list') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Class List
+                </Link>
+                <Link
+                  to="/admin/subjects"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/subjects') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Subjects
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* Students Dropdown */}
           <div className="space-y-1">
@@ -115,41 +148,56 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   Add Student
                 </Link>
                 <Link
-                  to="/admin/students/list"
+                  to="/admin/id-cards"
                   onClick={handleLinkClick}
-                  className={`block p-2 text-sm rounded ${isActive('/admin/students/list') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/id-cards') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
                 >
-                  Class List
+                  ID Cards
+                </Link>
+                <Link
+                  to="/admin/results"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/results') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Results & Marks
                 </Link>
               </div>
             )}
           </div>
 
-          {/* ✅ FEES & FEE STRUCTURE LINK */}
-          <Link
-            to="/admin/finance"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isFeeSection
-              ? 'bg-[#800000] text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaWallet className={isFeeSection ? 'text-red-400' : ''} />
-            <span className="font-semibold">Fees & Fee Structure</span>
-          </Link>
+          {/* Finance Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setShowFinanceMenu(!showFinanceMenu)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isFinanceSection ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <FaWallet className={isFinanceSection ? 'text-red-400' : ''} />
+                <span className="font-semibold">Finance</span>
+              </div>
+              {showFinanceMenu || isFinanceSection ? <FaChevronDown className="text-xs" /> : <FaChevronRight className="text-xs" />}
+            </button>
 
-          {/* ✅ SEPARATED FINANCE APP LINK */}
-          <Link
-            to="/admin/expenses"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/expenses')
-              ? 'bg-[#800000] text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaFileInvoiceDollar />
-            <span className="font-semibold">Finance</span>
-          </Link>
+            {(showFinanceMenu || isFinanceSection) && (
+              <div className="ml-4 pl-4 border-l-2 border-slate-700 space-y-1 mt-1">
+                <Link
+                  to="/admin/finance"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${location.pathname.includes('/fees') || location.pathname.includes('/fee-structure') || location.pathname.includes('/finance') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Fee & Fee Structure
+                </Link>
+                <Link
+                  to="/admin/expenses"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${isActive('/admin/expenses') ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Expenses
+                </Link>
+              </div>
+            )}
+          </div>
 
           <Link
             to="/admin/teachers"
@@ -161,32 +209,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           >
             <FaChalkboardTeacher />
             <span className="font-medium">Teachers</span>
-          </Link>
-
-          {/* ✅ NEW ID CARD LINK */}
-          <Link
-            to="/admin/id-cards"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/id-cards')
-              ? 'bg-[#800000] text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaIdCard />
-            <span className="font-medium">ID Cards</span>
-          </Link>
-
-          {/* ✅ NEW RESULTS LINK */}
-          <Link
-            to="/admin/results"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/results')
-              ? 'bg-[#800000] text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaAward />
-            <span className="font-medium">Results</span>
           </Link>
 
           {/* 🇮🇳 DIGILOCKER VAULT LINK */}
@@ -201,8 +223,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <FaShieldAlt className={isActive('/admin/digilocker') ? 'text-yellow-400' : 'text-blue-400'} />
             <div className="flex items-center justify-between flex-1">
               <span className="font-medium">DigiLocker</span>
-              <span className="text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">
-                Vault
+              <span className="text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                Beta
               </span>
             </div>
           </Link>

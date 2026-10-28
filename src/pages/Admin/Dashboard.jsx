@@ -85,7 +85,7 @@ const Dashboard = () => {
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end">
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Radhey Shyam Sansthaan</h1>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Radhey Shyam Shakuntala Shikshan Sansthaan</h1>
             <p className="text-slate-500 font-medium mt-1">Academic Session 2026-27 | Admin Insights</p>
           </div>
           <div className="mt-4 sm:mt-0 bg-red-50 text-red-700 px-4 py-2 rounded-xl border border-red-100 text-sm font-bold shadow-sm">

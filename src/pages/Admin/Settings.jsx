@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import axios from 'axios';
-import Sidebar from '../../components/Sidebar';
+import Layout from '../../components/Layout';
 import {
   FaCog, FaSchool, FaPhone, FaEnvelope, FaMapMarkerAlt,
   FaKey, FaEye, FaEyeSlash, FaSave, FaDatabase, FaShieldAlt,
@@ -12,7 +12,6 @@ import {
 } from 'react-icons/fa';
 
 const Settings = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const BASE_URL = import.meta.env.VITE_API_URL;
 
   // School Info
@@ -171,7 +170,6 @@ const Settings = () => {
     { id: 'school', label: 'School Info', icon: <FaSchool /> },
     { id: 'security', label: 'Security', icon: <FaShieldAlt /> },
     { id: 'data', label: 'Data Management', icon: <FaDatabase /> },
-    { id: 'about', label: 'About', icon: <FaCog /> },
   ];
 
   const selectiveOptions = [
@@ -242,19 +240,9 @@ const Settings = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    <Layout>
+      <div className="max-w-6xl mx-auto space-y-6 pb-10 animate-fade-in">
         <ToastContainer position="top-right" autoClose={2500} theme="colored" />
-
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="lg:hidden mb-4 p-2 rounded-xl bg-white shadow-sm border border-slate-200"
-        >
-          <FaBars className="text-slate-600" />
-        </button>
 
         {/* Header */}
         <div className="mb-8">
@@ -595,37 +583,6 @@ const Settings = () => {
           </div>
         )}
 
-        {/* ─── About Tab ─── */}
-        {activeTab === 'about' && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 space-y-5">
-            <div className="flex items-center gap-3 mb-2">
-              <FaDatabase className="text-blue-500 text-xl" />
-              <h2 className="text-lg font-bold text-slate-800">System Information</h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: 'Application', value: 'School Management System' },
-                { label: 'Version', value: 'v2.0.0' },
-                { label: 'Backend', value: 'Node.js + Express' },
-                { label: 'Database', value: 'MongoDB' },
-                { label: 'Frontend', value: 'React + Vite' },
-                { label: 'Developer', value: 'Seth Project' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
-                  <span className="text-sm font-bold text-slate-700">{item.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-4 border-t border-slate-100">
-              <p className="text-xs text-slate-400 text-center font-medium">
-                Radhey Shyam Shikshan Sansthaan © {new Date().getFullYear()} — All rights reserved
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* ─── CONFIRMATION MODAL ─── */}
         {clearModal.isOpen && (
@@ -699,9 +656,8 @@ const Settings = () => {
             </div>
           </div>
         )}
-
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 };
 

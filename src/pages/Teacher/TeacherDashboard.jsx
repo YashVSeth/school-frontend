@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  FaUserCheck, FaBookOpen, FaCalendarDay, FaAward,
+  FaUserCheck, FaBookOpen, FaAward,
   FaMapMarkerAlt, FaClipboardCheck, FaUserCircle,
   FaChalkboardTeacher, FaClock, FaArrowRight, FaCheckCircle,
   FaCalendarAlt, FaUsers, FaShieldAlt

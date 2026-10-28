@@ -13,6 +13,19 @@
   --color-red-800: #5f031e;
   --color-red-900: #4e051a;
   --color-red-950: #2f010e;
+
+  /* Replaced rgb(253, 199, 0) with rgb(152, 63, 91) across the entire website */
+  --color-yellow-50: #fdf2f5;
+  --color-yellow-100: #fbe6eb;
+  --color-yellow-200: #f5cdd8;
+  --color-yellow-300: #eb9cb1;
+  --color-yellow-400: rgb(152, 63, 91);
+  --color-yellow-500: rgb(152, 63, 91);
+  --color-yellow-600: #73233c;
+  --color-yellow-700: #5e1a30;
+  --color-yellow-800: #4e1728;
+  --color-yellow-900: #431724;
+  --color-yellow-950: #260912;
 }
 
 /* Keep your custom animations below */

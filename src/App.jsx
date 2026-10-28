@@ -13,6 +13,7 @@ import ResetPassword from "./pages/Admin/ResetPassword";
 // Admin Pages
 import Dashboard from './pages/Admin/Dashboard';
 import Classes from './pages/Admin/Classes';
+import Subjects from './pages/Admin/Subjects';
 import AddStudent from './pages/Admin/AddStudent';
 import StudentList from './pages/Admin/StudentList';
 import AttendanceAdmin from './pages/Admin/Attendance';
@@ -31,7 +32,6 @@ import Settings from './pages/Admin/Settings';
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
 import TeacherAttendance from './pages/Teacher/TeacherAttendance';
 import TeacherMarks from './pages/Teacher/TeacherMarks';
-import TeacherLeave from './pages/Teacher/TeacherLeave';
 import TeacherProfile from './pages/Teacher/TeacherProfile';
 import TeacherDigiLocker from './pages/Teacher/TeacherDigiLocker';
 
@@ -73,6 +73,7 @@ function App() {
               <Routes>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="classes" element={<Classes />} />
+                <Route path="subjects" element={<Subjects />} />
                 <Route path="students/add" element={<AddStudent />} />
                 <Route path="students/list" element={<StudentList />} />
                 <Route path="attendance" element={<AttendanceAdmin />} />
@@ -104,9 +105,6 @@ function App() {
 
                   {/* Marks / Grading Page */}
                   <Route path="marks" element={<TeacherMarks />} />
-
-                  {/* Leave Application */}
-                  <Route path="leave" element={<TeacherLeave />} />
 
                   {/* Teacher Profile */}
                   <Route path="profile" element={<TeacherProfile />} />

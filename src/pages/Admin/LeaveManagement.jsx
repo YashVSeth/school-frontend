@@ -1,166 +1,144 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { toast } from 'react-toastify';
-import { FaCalendarDay, FaCheckCircle, FaTimesCircle, FaClock, FaCalendarAlt } from 'react-icons/fa';
+import Layout from '../../components/Layout';
+import { toast, ToastContainer } from 'react-toastify';
+import { FaCalendarCheck, FaCheck, FaTimes, FaClock, FaUserTie } from 'react-icons/fa';
 
 const LeaveManagement = () => {
-    const [leaves, setLeaves] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('Pending'); // 'Pending', 'Approved', 'Declined', 'All'
+  const [leaves, setLeaves] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('All');
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
-    const BASE_URL = import.meta.env.VITE_API_URL;
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
 
-    useEffect(() => {
-        fetchLeaves();
-    }, [filter]);
+  const fetchLeaves = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/leaves`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLeaves(Array.isArray(res.data) ? res.data : (res.data.leaves || []));
+    } catch (err) {
+      console.error("Error fetching leaves:", err);
+      toast.error("Failed to load leave requests");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchLeaves = async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const query = filter !== 'All' ? `?status=${filter}` : '';
-            const res = await axios.get(`${BASE_URL}/api/leaves${query}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setLeaves(res.data.leaves);
-        } catch (error) {
-            console.error("Error fetching leaves:", error);
-            toast.error("Could not load leave requests");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleUpdateStatus = async (id, status) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${BASE_URL}/api/leaves/${id}/status`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(`Leave request ${status.toLowerCase()}!`);
+      setLeaves(prev => prev.map(l => l._id === id ? { ...l, status } : l));
+    } catch (err) {
+      console.error("Error updating status:", err);
+      toast.error("Failed to update status");
+    }
+  };
 
-    const handleUpdateStatus = async (id, newStatus) => {
-        try {
-            const token = localStorage.getItem('token');
-            // Optimistic UI update
-            setLeaves(prev => prev.map(l => l._id === id ? { ...l, status: newStatus } : l));
+  const filteredLeaves = leaves.filter(l => {
+    if (filter === 'All') return true;
+    return l.status === filter;
+  });
 
-            await axios.put(`${BASE_URL}/api/leaves/${id}/status`, { status: newStatus }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+  return (
+    <Layout>
+      <div className="max-w-6xl mx-auto animate-fade-in-up pb-10 space-y-6">
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
 
-            toast.success(`Leave request ${newStatus.toLowerCase()}!`);
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-600 to-amber-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Faculty Leave Management</h1>
+            <p className="text-orange-100 text-xs sm:text-sm mt-1">Review, approve and manage leave applications from teachers.</p>
+          </div>
+          <FaCalendarCheck size={36} className="opacity-20 hidden md:block" />
+        </div>
 
-            // If we are filtering, remove it from the list if it no longer matches
-            if (filter !== 'All') {
-                setLeaves(prev => prev.filter(l => l.status === filter));
-            }
+        {/* Filter Pills */}
+        <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm w-fit">
+          {['All', 'Pending', 'Approved', 'Declined'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                filter === tab ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-            // Trigger Substitution Modal Flow if Approved
-            // Removed: Substitution feature deprecated.
-        } catch (error) {
-            console.error("Update status error:", error.response?.data || error.message);
-            toast.error(error.response?.data?.message || "Failed to update status");
-            // Revert optimism if error
-            fetchLeaves();
-        }
-    };
-
-    const renderStatusBadge = (status) => {
-        switch (status) {
-            case 'Approved':
-                return <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold border border-emerald-200 flex items-center gap-1 w-max"><FaCheckCircle className="text-[10px]" /> Approved</span>;
-            case 'Declined':
-                return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold border border-red-200 flex items-center gap-1 w-max"><FaTimesCircle className="text-[10px]" /> Declined</span>;
-            default:
-                return <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold border border-amber-200 flex items-center gap-1 w-max"><FaClock className="text-[10px]" /> Pending</span>;
-        }
-    };
-
-    return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-inner">
-                        <FaCalendarDay size={20} />
+        {/* Leaves List */}
+        {loading ? (
+          <div className="p-12 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100">
+            Loading leave applications...
+          </div>
+        ) : filteredLeaves.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100">
+            No {filter !== 'All' ? filter.toLowerCase() : ''} leave applications found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredLeaves.map(leave => (
+              <div key={leave._id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3 relative overflow-hidden">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+                      <FaUserTie />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Leave Approvals</h1>
-                        <p className="text-slate-500 text-sm font-medium">Review and manage teacher absences</p>
+                      <h3 className="font-bold text-slate-800 text-sm">{leave.teacher?.fullName || 'Faculty Member'}</h3>
+                      <p className="text-xs text-slate-400">{leave.teacher?.email || leave.teacher?.specialization || 'Department Faculty'}</p>
                     </div>
+                  </div>
+
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    leave.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                    leave.status === 'Declined' ? 'bg-rose-100 text-rose-700' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {leave.status}
+                  </span>
                 </div>
 
-                <div className="flex bg-slate-100 p-1 rounded-lg">
-                    {['Pending', 'Approved', 'Declined', 'All'].map(f => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f)}
-                            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${filter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            {f}
-                        </button>
-                    ))}
+                <div className="bg-slate-50 p-3 rounded-xl text-xs space-y-1 text-slate-600">
+                  <p><strong>Duration:</strong> {new Date(leave.startDate).toLocaleDateString()} to {new Date(leave.endDate).toLocaleDateString()}</p>
+                  <p><strong>Reason:</strong> {leave.reason}</p>
                 </div>
-            </div>
 
-            {/* List */}
-            {loading ? (
-                <div className="text-center py-12 text-slate-400 font-bold">Loading requests...</div>
-            ) : leaves.length > 0 ? (
-                <div className="grid gap-4">
-                    {leaves.map(leave => {
-                        const start = new Date(leave.startDate).toLocaleDateString();
-                        const end = new Date(leave.endDate).toLocaleDateString();
-                        const sameDay = start === end;
-                        const dateStr = sameDay ? start : `${start} to ${end}`;
-                        const name = leave.teacher?.fullName || `${leave.teacher?.firstName || ''} ${leave.teacher?.lastName || ''}`.trim() || 'Unknown Teacher';
-
-                        return (
-                            <div key={leave._id} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col lg:flex-row justify-between gap-6 hover:shadow-md transition-shadow">
-
-                                <div className="flex gap-4 items-start flex-1">
-                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 shrink-0">
-                                        {name.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-bold text-slate-800">{name}</span>
-                                            {renderStatusBadge(leave.status)}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-indigo-600 text-xs font-bold mt-1 bg-indigo-50 w-max px-2 py-1 rounded-md">
-                                            <FaCalendarAlt /> {dateStr}
-                                        </div>
-                                        <p className="text-sm text-slate-600 font-medium leading-relaxed mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                            "{leave.reason}"
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {leave.status === 'Pending' && (
-                                    <div className="flex items-center gap-2 lg:flex-col lg:w-32 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6">
-                                        <button
-                                            onClick={() => handleUpdateStatus(leave._id, 'Approved')}
-                                            className="flex-1 py-2 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
-                                        >
-                                            <FaCheckCircle /> Approve
-                                        </button>
-                                        <button
-                                            onClick={() => handleUpdateStatus(leave._id, 'Declined')}
-                                            className="flex-1 py-2 px-4 bg-white border-2 border-slate-200 hover:border-red-500 hover:bg-red-50 text-slate-600 hover:text-red-600 text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <FaTimesCircle /> Decline
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className="bg-white rounded-2xl py-20 flex flex-col items-center justify-center text-slate-400 border border-slate-100 border-dashed">
-                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <FaCalendarDay size={32} className="text-slate-300" />
-                    </div>
-                    <p className="font-bold text-slate-500 text-lg">No {filter.toLowerCase()} leaves found.</p>
-                    <p className="text-sm mt-1">When teachers request time off, it will appear here.</p>
-                </div>
-            )}
-
-        </div>
-    );
+                {leave.status === 'Pending' && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => handleUpdateStatus(leave._id, 'Approved')}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
+                    >
+                      <FaCheck size={11} /> Approve
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus(leave._id, 'Declined')}
+                      className="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <FaTimes size={11} /> Decline
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
 };
 
 export default LeaveManagement;

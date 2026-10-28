@@ -240,7 +240,7 @@ const TeacherAttendance = () => {
                 onClick={() => setSelectedClassId(cls._id)}
                 className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
                   selectedClassId === cls._id
-                    ? 'bg-yellow-400 text-slate-900 shadow-sm'
+                    ? 'bg-yellow-400 text-white shadow-sm ring-1 ring-white/20'
                     : 'bg-white/10 text-white hover:bg-white/20'
                 }`}
               >
@@ -266,7 +266,7 @@ const TeacherAttendance = () => {
             {!isToday && (
               <button
                 onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-                className="bg-yellow-400 text-slate-900 font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl active:scale-95 transition"
+                className="bg-yellow-400 text-white font-extrabold text-[11px] px-2.5 py-1.5 rounded-xl active:scale-95 transition shadow-sm"
               >
                 Today
               </button>

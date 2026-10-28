@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import Sidebar from '../../components/Sidebar';
+import TeacherSidebar from '../../components/TeacherSidebar';
 import {
   FaShieldAlt, FaLock, FaCheckCircle, FaClock, FaTimesCircle,
   FaSearch, FaFilter, FaUpload, FaDownload, FaPrint, FaTrash,
@@ -11,9 +13,40 @@ import {
   FaFilePdf, FaMobileAlt, FaInfoCircle
 } from 'react-icons/fa';
 
-const DigiLocker = () => {
+const DigiLocker = ({ defaultOwnerType }) => {
+  const navigate = useNavigate();
+
+  // 🔒 ACCESS CONTROL / DEVELOPMENT WARNING STATE
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    return sessionStorage.getItem('digilocker_vault_unlocked') === 'true';
+  });
+  const [accessError, setAccessError] = useState('');
+
+  const handleUnlockVault = (e) => {
+    if (e) e.preventDefault();
+    if (accessCodeInput.trim() === 'yash123') {
+      sessionStorage.setItem('digilocker_vault_unlocked', 'true');
+      setIsUnlocked(true);
+      setAccessError('');
+      toast.success("Access granted to DigiLocker Vault!");
+    } else {
+      setAccessError('Incorrect access code. Access is restricted during the development phase.');
+      toast.error('Invalid access code!');
+    }
+  };
+
+  const handleExitVault = () => {
+    const userRole = localStorage.getItem('role');
+    if (userRole === 'teacher' || defaultOwnerType === 'Teacher') {
+      navigate('/teacher/dashboard');
+    } else {
+      navigate('/admin/dashboard');
+    }
+  };
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'STUDENT' | 'TEACHER'
+  const [activeTab, setActiveTab] = useState(defaultOwnerType === 'Teacher' ? 'TEACHER' : 'ALL'); // 'ALL' | 'STUDENT' | 'TEACHER'
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'Verified' | 'Pending Verification' | 'Rejected'
   const [searchQuery, setSearchQuery] = useState('');
   const [docTypeFilter, setDocTypeFilter] = useState('ALL');
@@ -129,8 +162,12 @@ const DigiLocker = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isUnlocked) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, [isUnlocked]);
 
   // OTP Countdown Timer
   useEffect(() => {
@@ -508,8 +545,78 @@ const DigiLocker = () => {
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans select-none text-slate-800">
-      {/* Admin Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      {/* Dynamic Role Sidebar */}
+      {defaultOwnerType === 'Teacher' ? (
+        <TeacherSidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      ) : (
+        <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      )}
+
+      {/* SECURITY ACCESS GATEWAY MODAL */}
+      {!isUnlocked && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-sm w-full shadow-xl border border-slate-200 overflow-hidden animate-scale-in">
+            {/* Header */}
+            <div className="bg-slate-800 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center text-sm font-bold">
+                  <FaLock />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">DigiLocker Access</h3>
+                  <p className="text-xs text-slate-300">Enter access code to proceed</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Code Entry Form */}
+            <div className="p-6">
+              <form onSubmit={handleUnlockVault} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                    Security Access Code
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      autoFocus
+                      placeholder="Enter security access code"
+                      value={accessCodeInput}
+                      onChange={(e) => {
+                        setAccessCodeInput(e.target.value);
+                        setAccessError('');
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition"
+                    />
+                    <FaKey className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                  </div>
+                  {accessError && (
+                    <p className="text-xs font-semibold text-red-600 mt-1.5">
+                      {accessError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExitVault}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm transition active:scale-95"
+                  >
+                    Enter Vault
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">

@@ -315,7 +315,7 @@ const TeacherMarks = () => {
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
                     selectedClassId === cls._id
-                      ? 'bg-yellow-400 text-slate-900 shadow-sm'
+                      ? 'bg-yellow-400 text-white shadow-sm ring-1 ring-white/20'
                       : 'bg-white/15 text-white hover:bg-white/25'
                   }`}
                 >

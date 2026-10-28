@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaClipboardCheck, FaSignOutAlt, FaTimes,
-  FaCalendarDay, FaAward, FaUserCircle, FaShieldAlt
+  FaAward, FaUserCircle, FaShieldAlt
 } from 'react-icons/fa';
 import logo from '../assets/logo.png';
 
@@ -112,6 +112,11 @@ const TeacherSidebar = ({ isOpen, toggleSidebar }) => {
                   </div>
                   <span className="text-sm tracking-tight">{item.label}</span>
                 </div>
+                {item.to.includes('digilocker') && (
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                    Beta
+                  </span>
+                )}
               </Link>
             );
           })}
