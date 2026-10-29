@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import AddTeacherModal from './AddTeacherModal';
 import TeacherAttendanceModal from './TeacherAttendanceModal'; // Individual History
@@ -8,12 +9,24 @@ import AssignSalaryModal from './AssignSalaryModal'; // ✅ IMPORT ASSIGN SALARY
 import ExcelDataImporter from '../../components/ExcelDataImporter'; // ✅ IMPORT EXCEL IMPORTER
 import axios from 'axios';
 import {
-  FaPlus, FaSearch, FaEnvelope, FaPhone, FaBook, FaTrash, FaEdit, FaCalendarCheck, FaClipboardList, FaMoneyCheckAlt, FaWhatsapp, FaCopy, FaCheckCircle, FaFileExcel
+  FaPlus, FaSearch, FaEnvelope, FaPhone, FaBook, FaTrash, FaEdit, FaCalendarCheck, FaClipboardList, FaMoneyCheckAlt, FaWhatsapp, FaCopy, FaCheckCircle, FaFileExcel, FaChevronDown
 } from 'react-icons/fa';
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Redirect legacy query parameter links to dedicated pages
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'salary') {
+      navigate('/admin/teachers/salary', { replace: true });
+    } else if (action === 'attendance' || action === 'daily-attendance') {
+      navigate('/admin/teachers/attendance', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +43,10 @@ const Teachers = () => {
 
   // ✅ NEW: Bulk Assign Salary State
   const [isAssignSalaryOpen, setIsAssignSalaryOpen] = useState(false);
+
+  // Salary Dropdown State
+  const [isSalaryDropdownOpen, setIsSalaryDropdownOpen] = useState(false);
+  const salaryDropdownRef = React.useRef(null);
 
   // ✅ NEW: Excel Importer State
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -57,6 +74,17 @@ const Teachers = () => {
 
   useEffect(() => {
     fetchTeachers();
+  }, []);
+
+  // Close salary dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (salaryDropdownRef.current && !salaryDropdownRef.current.contains(e.target)) {
+        setIsSalaryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const getImageUrl = (path) => {
@@ -127,6 +155,13 @@ const Teachers = () => {
           </div>
 
           <div className="flex gap-3 flex-wrap">
+            {/* SALARY & ATTENDANCE HUB LINK */}
+            <Link
+              to="/admin/teachers/salary"
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-semibold text-sm"
+            >
+              <FaMoneyCheckAlt className="text-amber-400" /> Salary & Attendance
+            </Link>
             {/* ✅ IMPORT TEACHERS BUTTON */}
             <button
               onClick={() => setIsImportOpen(!isImportOpen)}
@@ -137,22 +172,6 @@ const Teachers = () => {
               }`}
             >
               <FaFileExcel className={isImportOpen ? 'text-white' : 'text-emerald-600'} /> {isImportOpen ? 'Close Import' : 'Import Teachers'}
-            </button>
-
-            {/* ✅ NEW: ASSIGN SALARY BUTTON */}
-            <button
-              onClick={() => setIsAssignSalaryOpen(true)}
-              className="flex items-center gap-2 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 px-5 py-2.5 rounded-xl transition-all font-bold shadow-sm"
-            >
-              <FaMoneyCheckAlt /> Assign Salary
-            </button>
-
-            {/* ✅ NEW: DAILY ATTENDANCE BUTTON */}
-            <button
-              onClick={() => setIsDailyAttendanceOpen(true)}
-              className="flex items-center gap-2 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-red-600 px-5 py-2.5 rounded-xl transition-all font-semibold shadow-sm"
-            >
-              <FaClipboardList /> Daily Attendance
             </button>
 
             {/* ADD NEW TEACHER BUTTON */}
@@ -298,11 +317,21 @@ const Teachers = () => {
         teacherToEdit={selectedTeacher}
       />
       <TeacherAttendanceModal isOpen={isAttendanceOpen} onClose={() => setIsAttendanceOpen(false)} teacher={teacherForAttendance} />
-      <DailyAttendanceModal isOpen={isDailyAttendanceOpen} onClose={() => setIsDailyAttendanceOpen(false)} />
+      <DailyAttendanceModal 
+        isOpen={isDailyAttendanceOpen} 
+        onClose={() => { 
+          setIsDailyAttendanceOpen(false);
+          if (searchParams.get('action')) setSearchParams({}, { replace: true });
+        }} 
+      />
       <TeacherSalaryModal isOpen={isSalaryOpen} onClose={() => setIsSalaryOpen(false)} teacher={teacherForSalary} />
       <AssignSalaryModal
         isOpen={isAssignSalaryOpen}
-        onClose={() => { setIsAssignSalaryOpen(false); fetchTeachers(); }}
+        onClose={() => { 
+          setIsAssignSalaryOpen(false); 
+          fetchTeachers(); 
+          if (searchParams.get('action')) setSearchParams({}, { replace: true });
+        }}
       />
 
       {/* ✅ NEW: SUCCESS CREDENTIALS MODAL */}

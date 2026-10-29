@@ -18,6 +18,7 @@ import AddStudent from './pages/Admin/AddStudent';
 import StudentList from './pages/Admin/StudentList';
 import AttendanceAdmin from './pages/Admin/Attendance';
 import Teachers from './pages/Admin/Teachers';
+import TeacherOperationsHub from './pages/Admin/TeacherOperationsHub';
 import Fees from './pages/Admin/Fees';
 import FinanceDashboard from './pages/Admin/FinanceDashboard';
 import FeeStructure from './pages/Admin/FeeStructure';
@@ -82,6 +83,9 @@ function App() {
                 <Route path="finance" element={<FinanceDashboard initialTab="collect" />} />
                 <Route path="expenses" element={<ExpenseCalculator />} />
                 <Route path="teachers" element={<Teachers />} />
+                <Route path="teachers/salary" element={<TeacherOperationsHub initialTab="salary" />} />
+                <Route path="teachers/attendance" element={<TeacherOperationsHub initialTab="attendance" />} />
+                <Route path="teachers/operations" element={<TeacherOperationsHub initialTab="salary" />} />
                 <Route path="leaves" element={<LeaveManagement />} />
                 <Route path="id-cards" element={<IDCardManagement />} />
                 <Route path="results" element={<ResultManagement />} />

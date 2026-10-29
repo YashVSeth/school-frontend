@@ -850,23 +850,6 @@ const ExcelDataImporter = ({ onImportSuccess, defaultType = 'students' }) => {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => downloadSampleTemplate('students')}
-              className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
-            >
-              <FaDownload size={10} className="text-emerald-600" /> Student Sample
-            </button>
-            <button
-              type="button"
-              onClick={() => downloadSampleTemplate('teachers')}
-              className="text-[11px] font-bold text-slate-500 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
-            >
-              <FaDownload size={10} className="text-blue-600" /> Teacher Sample
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

@@ -16,6 +16,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const [showStudentMenu, setShowStudentMenu] = useState(false);
   const [showClassMenu, setShowClassMenu] = useState(false);
   const [showFinanceMenu, setShowFinanceMenu] = useState(false);
+  const [showTeacherMenu, setShowTeacherMenu] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -26,6 +27,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const isClassSection = location.pathname.includes('/classes') || location.pathname === '/admin/students/list' || location.pathname.includes('/subjects');
   const isStudentSection = location.pathname.includes('/students/add') || location.pathname.includes('/id-cards') || location.pathname.includes('/results');
   const isFinanceSection = location.pathname.includes('/fees') || location.pathname.includes('/fee-structure') || location.pathname.includes('/finance') || location.pathname.includes('/expenses');
+  const isTeacherSection = location.pathname.includes('/teachers');
 
   // Helper to close sidebar on mobile when a link is clicked
   const handleLinkClick = () => {
@@ -199,17 +201,46 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             )}
           </div>
 
-          <Link
-            to="/admin/teachers"
-            onClick={handleLinkClick}
-            className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isActive('/admin/teachers')
-              ? 'bg-[#800000] text-white shadow-lg'
-              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-          >
-            <FaChalkboardTeacher />
-            <span className="font-medium">Teachers</span>
-          </Link>
+          {/* Teachers Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setShowTeacherMenu(!showTeacherMenu)}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${isTeacherSection ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <FaChalkboardTeacher className={isTeacherSection ? 'text-red-400' : ''} />
+                <span className="font-medium">Teachers</span>
+              </div>
+              {showTeacherMenu || isTeacherSection ? <FaChevronDown className="text-xs" /> : <FaChevronRight className="text-xs" />}
+            </button>
+
+            {(showTeacherMenu || isTeacherSection) && (
+              <div className="ml-4 pl-4 border-l-2 border-slate-700 space-y-1 mt-1">
+                <Link
+                  to="/admin/teachers"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${location.pathname === '/admin/teachers' ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Manage Teachers
+                </Link>
+                <Link
+                  to="/admin/teachers/salary"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${location.pathname === '/admin/teachers/salary' ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Salary & Payroll
+                </Link>
+                <Link
+                  to="/admin/teachers/attendance"
+                  onClick={handleLinkClick}
+                  className={`block p-2 text-sm rounded ${location.pathname === '/admin/teachers/attendance' ? 'text-red-400 font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Daily Attendance
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* 🇮🇳 DIGILOCKER VAULT LINK */}
           <Link
